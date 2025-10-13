@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coffee House</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Open+Sans&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="#">☕ Coffee House</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+          aria-controls="navbarNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="#about">Giới thiệu</a>
+            </li>
+            <li class="nav-item"><a class="nav-link" href="#menu">Menu</a></li>
+            <li class="nav-item">
+              <a class="nav-link" href="#contact">Liên hệ</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <section class="hero text-center">
+      <div>
+        <h1>Chào mừng đến với Coffee House</h1>
+        <p>Hương vị đậm đà – Không gian ấm cúng</p>
+        <a href="#menu" class="btn btn-light mt-3">Khám phá Menu</a>
+      </div>
+    </section>
+
+    <section id="about" class="container py-5 text-center">
+      <h2 class="mb-4">Về chúng tôi</h2>
+      <p class="lead">
+        Coffee House là nơi lý tưởng để bạn thưởng thức những ly cà phê rang xay
+        nguyên chất, trong không gian yên tĩnh, ấm áp và đậm chất nghệ thuật.
+        Chúng tôi tin rằng, mỗi ly cà phê đều mang trong mình một câu chuyện
+        riêng.
+      </p>
+    </section>
+
+    <section id="menu" class="container py-5">
+      <h2 class="text-center mb-5">Menu của chúng tôi</h2>
+
+      <ul
+        class="nav nav-tabs justify-content-center mb-4"
+        id="menuTabs"
+        role="tablist"
+      >
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link active"
+            id="coffee-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#coffee"
+            type="button"
+            role="tab"
+          >
+            Cà phê
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            id="tea-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#tea"
+            type="button"
+            role="tab"
+          >
+            Trà
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            id="cake-tab"
+            data-bs-toggle="tab"
+            data-bs-target="#cake"
+            type="button"
+            role="tab"
+          >
+            Bánh ngọt
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+        <div class="tab-pane fade show active" id="coffee">
+          <div class="row g-4">
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
+                  alt="Espresso"
+                />
+                <div class="card-body text-center">
+                  <h5>Espresso</h5>
+                  <p>Hương vị đậm đà, mạnh mẽ.</p>
+                  <p class="fw-bold text-primary">45.000đ</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80"
+                  alt="Latte"
+                />
+                <div class="card-body text-center">
+                  <h5>Latte</h5>
+                  <p>Sự hòa quyện giữa cà phê và sữa tươi.</p>
+                  <p class="fw-bold text-primary">50.000đ</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=800&q=80"
+                  alt="Cappuccino"
+                />
+                <div class="card-body text-center">
+                  <h5>Cappuccino</h5>
+                  <p>Bọt sữa mịn màng, tinh tế.</p>
+                  <p class="fw-bold text-primary">55.000đ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tea">
+          <div class="row g-4">
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=800&q=80"
+                  alt="Trà đào cam sả"
+                />
+                <div class="card-body text-center">
+                  <h5>Trà đào cam sả</h5>
+                  <p>Thơm nhẹ, mát lành.</p>
+                  <p class="fw-bold text-primary">45.000đ</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=800&q=80"
+                  alt="Trà matcha sữa"
+                />
+                <div class="card-body text-center">
+                  <h5>Trà matcha sữa</h5>
+                  <p>Matcha nguyên chất, vị thanh nhẹ.</p>
+                  <p class="fw-bold text-primary">50.000đ</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1579338559194-a162d19bf842?auto=format&fit=crop&w=800&q=80"
+                  alt="Trà hoa cúc mật ong"
+                />
+                <div class="card-body text-center">
+                  <h5>Trà hoa cúc mật ong</h5>
+                  <p>Giúp thư giãn, tốt cho sức khỏe.</p>
+                  <p class="fw-bold text-primary">40.000đ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="cake">
+          <div class="row g-4">
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1606312619070-d48d09e9c635?auto=format&fit=crop&w=800&q=80"
+                  alt="Tiramisu"
+                />
+                <div class="card-body text-center">
+                  <h5>Tiramisu</h5>
+                  <p>Bánh Ý thơm ngon với hương cà phê.</p>
+                  <p class="fw-bold text-primary">65.000đ</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1608571423902-eed4a5ad63a2?auto=format&fit=crop&w=800&q=80"
+                  alt="Bánh phô mai dâu"
+                />
+                <div class="card-body text-center">
+                  <h5>Bánh phô mai dâu</h5>
+                  <p>Vị dâu chua nhẹ hòa quyện phô mai.</p>
+                  <p class="fw-bold text-primary">60.000đ</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="card h-100 shadow-sm">
+                <img
+                  src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80"
+                  alt="Bánh socola"
+                />
+                <div class="card-body text-center">
+                  <h5>Bánh socola</h5>
+                  <p>Hương vị đậm đà, khó cưỡng.</p>
+                  <p class="fw-bold text-primary">55.000đ</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="py-5 text-center">
+      <div class="container">
+        <h2 class="mb-4">Liên hệ với chúng tôi</h2>
+        <p>📍 123 Đường Cà Phê, Quận 1, TP.HCM</p>
+        <p>📞 0909 123 456 | ✉️ coffeehouse@gmail.com</p>
+        <a href="#" class="btn btn-dark">Gửi tin nhắn</a>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2025 Coffee House | Designed with ❤️ by You</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
