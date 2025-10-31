@@ -23,13 +23,21 @@ import java.util.List;
 public class UserController {
      UserService userService;
 
-    @PostMapping
-    ApiResponse<User> createUser(@RequestBody @Valid UserCreationRequest request){
-        ApiResponse<User> apiResponse = new ApiResponse<>();
+//    @PostMapping
+//    ApiResponse<User> createUser(@RequestBody @Valid UserCreationRequest request){
+//        ApiResponse<User> apiResponse = new ApiResponse<>();
+//
+//        apiResponse.setResult(userService.creatRequest(request));
+//        return apiResponse;
+//    }
+@PostMapping
+ApiResponse<UserReponse> createUser(@RequestBody @Valid UserCreationRequest request){
+    ApiResponse<UserReponse> apiResponse = new ApiResponse<>();
 
-        apiResponse.setResult(userService.creatRequest(request));
-        return apiResponse;
-    }
+    apiResponse.setResult(userService.createUser(request));
+
+    return apiResponse;
+}
 
     @GetMapping
     List<User> getUsers(){

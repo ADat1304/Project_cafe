@@ -12,6 +12,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,19 +26,28 @@ public class UserService {
 
     UserMapper userMapper;
 
-    public User creatRequest(UserCreationRequest request){
+//    public User creatRequest(UserCreationRequest request){
+//
+//        if(userRepository.existsByUsername(request.getUsername()))
+//            throw new AppException(ErrorCode.USER_EXISTED);
+//
+////        UserCreationRequest request1= UserCreationRequest.builder().
+////                username("abc").
+////                password("xyz").
+////                build();
+//        User user= userMapper.toUser(request);
+//
+//        return userRepository.save(user);
+//    }
+public UserReponse createUser(UserCreationRequest request){
+    if (userRepository.existsByUsername(request.getUsername()))
+        throw new AppException(ErrorCode.USER_EXISTED);
 
-        if(userRepository.existsByUsername(request.getUsername()))
-            throw new AppException(ErrorCode.USER_EXISTED);
-
-//        UserCreationRequest request1= UserCreationRequest.builder().
-//                username("abc").
-//                password("xyz").
-//                build();
-        User user= userMapper.toUser(request);
-
-        return userRepository.save(user);
-    }
+    User user = userMapper.toUser(request);
+    PasswordEncoder passwordEncoder= new BCryptPasswordEncoder(10);
+    user.setPassword(passwordEncoder.encode(request.getPassword()));
+    return userMapper.toUserReponse(userRepository.save(user));
+}
 
     public List<User> getUsers(){
         return userRepository.findAll();

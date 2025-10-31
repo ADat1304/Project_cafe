@@ -2,8 +2,10 @@ package com.example.demo_database.exception;
 
 public enum ErrorCode {
     PASSWORD_INVALID(1003,"Password must be at least 8 charactor"),
-    INVALID_KEY(1001,"invalid key"),
-    USER_EXISTED(1001, "user existed");
+    INVALID_KEY(1002,"invalid key"),
+    USER_EXISTED(1001, "user existed"),
+    USER_NOT_EXISTED(1004, "user not existed"),
+    UNAUTHENTICATED(1005, "Unauthenticated");
 
     private int code;
     private String messenger;
