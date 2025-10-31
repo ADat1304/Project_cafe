@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý Nhân viên</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
+    <style>
+      body {
+        font-family: "Be Vietnam Pro", sans-serif;
+        background-color: #f0f2f5;
+      }
+
+      .sidebar {
+        background-color: #ffffff;
+        border-right: 1px solid #dee2e6;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+      }
+
+      .sidebar .nav-link {
+        color: #5a5a5a;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        padding: 0.8rem 1rem;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        background-color: #0bb783;
+        color: #ffffff;
+      }
+
+      .sidebar .nav-link:hover i,
+      .sidebar .nav-link.active i {
+        color: #ffffff !important;
+      }
+
+      .sidebar .nav-link i {
+        color: #5a5a5a;
+        transition: all 0.3s ease;
+      }
+
+      /* === SỬA: Đổi nền main-content cho giống index.html === */
+      .main-content {
+        background-color: #f0f2f5; /* Đổi từ #ffffff sang #f0f2f5 */
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      .header-bar {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 1rem 2rem; /* Sửa padding cho giống index.html */
+        margin-bottom: 2rem;
+      }
+
+      .user-profile img {
+        border: 2px solid #0bb783;
+      }
+
+      /* === NÂNG CẤP: Thêm style cho card nội dung === */
+      .content-wrapper {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        height: max-content;
+      }
+
+      .table-container {
+        max-height: 350px; /* Chiều cao tối đa của bảng */
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+      }
+
+      /* Tùy chỉnh thanh cuộn cho bảng */
+      .table-container::-webkit-scrollbar {
+        width: 8px;
+      }
+      .table-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      .table-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+        border: 2px solid #f1f1f1;
+      }
+      .table-container::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+      }
+
+      .table > :not(caption) > * > * {
+        padding: 0.8rem 0.8rem;
+        vertical-align: middle;
+        font-size: 0.9rem;
+      }
+
+      .table thead th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        position: sticky;
+        top: 0;
+        border-bottom-width: 1px;
+      }
+
+      .table-hover > tbody > tr:hover > * {
+        background-color: #e9f7f2;
+        cursor: pointer;
+      }
+
+      .search-bar {
+        max-width: 300px;
+      }
+      .search-bar .form-control {
+        border-left: none;
+      }
+      .search-bar .input-group-text {
+        border-right: none;
+      }
+
+      .form-section {
+        margin-top: 2.5rem;
+      }
+
+      /* Style cho form inputs */
+      .form-section .form-control,
+      .form-section .form-select {
+        background-color: #f7f7f7;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+      }
+      .form-section .form-control:focus,
+      .form-section .form-select:focus {
+        background-color: #ffffff;
+        border-color: #0bb783;
+        box-shadow: 0 0 0 0.25rem rgba(11, 183, 131, 0.25);
+      }
+
+      /* Style cho placeholder 'Cal pick ngay nha' */
+      input[type="text"]#ngayVaoLam::placeholder {
+        color: #a0a0a0;
+        font-style: italic;
+      }
+
+      .action-buttons .btn {
+        padding: 0.75rem 1rem;
+        font-weight: 700;
+        border-radius: 8px;
+        border: none;
+      }
+      .btn-add {
+        background-color: #19c37d; /* Green */
+        color: white;
+      }
+      .btn-add:hover {
+        background-color: #15a36a;
+        color: white;
+      }
+      .btn-delete {
+        background-color: #c72c41; /* Red */
+        color: white;
+      }
+      .btn-delete:hover {
+        background-color: #a62436;
+        color: white;
+      }
+      .btn-update {
+        background-color: #0d6efd; /* Blue */
+        color: white;
+      }
+      .btn-update:hover {
+        background-color: #0b5ed7;
+        color: white;
+      }
+      .btn-save {
+        background-color: #ffc107; /* Yellow */
+        color: black;
+      }
+      .btn-save:hover {
+        background-color: #d39e00;
+        color: black;
+      }
+
+      /* Nút màu tím cho modal login */
+      .btn-purple {
+        background-color: #7a5cfa;
+        color: white;
+        border: none;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+      }
+      .btn-purple:hover {
+        background-color: #6144d4;
+        color: white;
+      }
+
+      /* Style cho modal */
+      .modal-content {
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      }
+      .modal-header,
+      .modal-footer {
+        border: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-xl-2 px-0 sidebar d-none d-xl-block">
+          <nav class="navbar mt-4 d-flex flex-column align-items-stretch">
+            <div
+              class="nav-item d-flex align-items-center justify-content-center mb-4"
+            >
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 56 56"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect width="56" height="56" rx="8" fill="#0BB783" />
+                <path
+                  d="M22.3743 17.6274C21.2422 18.7805 21.2422 20.6464 22.3952 21.7994L24.911 24.3152C27.28 26.6842 27.28 30.5418 24.911 32.9108L20.2988 28.2985C19.1143 27.114 18.5168 25.5521 18.5168 24.0007C18.5168 22.4493 19.1143 20.8875 20.2988 19.7029L22.3428 17.6589C22.3533 17.6484 22.3638 17.6379 22.3743 17.6274Z"
+                  fill="#0BB783"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176"
+                  fill="#0BB783"
+                />
+                <path
+                  d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M34.2715 38.2246C35.4036 37.0716 35.4036 35.2057 34.2505 34.0526L31.7348 31.5368C29.3657 29.1678 29.3657 25.3103 31.7348 22.9413L36.347 27.5535C37.5315 28.738 38.129 30.2999 38.129 31.8513C38.129 33.4027 37.5315 34.9646 36.347 36.1491L34.3029 38.1932C34.282 38.2241 34.2715 38.2246 34.2715 38.2246Z"
+                  fill="#0BB783"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332"
+                  fill="#0BB783"
+                />
+                <path
+                  d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+              </svg>
+              <a class="navbar-brand ms-2 fw-bold fs-4" href="#">LOGO</a>
+            </div>
+
+            <ul class="navbar-nav flex-column w-100 px-3">
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center" href="index.html">
+                  <i class="bi bi-house-door fs-5"></i>
+                  <span class="ms-3 fw-semibold">Trang chủ</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="BanHang.html"
+                >
+                  <i class="bi bi-cart3 fs-5"></i>
+                  <span class="ms-3 fw-semibold">Bán hàng</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center" href="#">
+                  <i class="bi bi-bar-chart-line fs-5"></i>
+                  <span class="ms-3 fw-semibold">Thống kê</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="SanPham.html"
+                >
+                  <i class="bi bi-bag fs-5"></i>
+                  <span class="ms-3 fw-semibold">Sản phẩm | Menu</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="HoaDon.html"
+                >
+                  <i class="bi bi-receipt fs-5"></i>
+                  <span class="ms-3 fw-semibold">Hóa đơn</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link active d-flex align-items-center"
+                  href="NhanVien.html"
+                  data-bs-toggle="modal"
+                  data-bs-target="#authModal"
+                >
+                  <i class="bi bi-people fs-5"></i>
+                  <span class="ms-3 fw-semibold">Nhân viên</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="KhachHang.html"
+                >
+                  <i class="bi bi-person fs-5"></i>
+                  <span class="ms-3 fw-semibold">Khách hàng</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="KhuyenMai.html"
+                >
+                  <i class="bi bi-tag fs-5"></i>
+                  <span class="ms-3 fw-semibold">Khuyến mãi</span>
+                </a>
+              </li>
+              <li class="nav-item mt-4">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="DangNhap.html"
+                >
+                  <i class="bi bi-box-arrow-right fs-5"></i>
+                  <span class="ms-3 fw-semibold">Đăng xuất</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="col-xl-10 col-12 main-content">
+          <div
+            class="header-bar d-flex justify-content-between align-items-center"
+          >
+            <!-- SỬA: Bỏ fw-bold -->
+            <h1 class="h3 mb-0">Nhân viên</h1>
+            <div class="d-flex align-items-center user-profile">
+              <img class="rounded-circle" src="https://i.pravatar.cc/60"
+              alt="Avatar" style="width: 60px; height: 60px" /* SỬA: Kích thước
+              60px */ />
+              <div class="ms-3">
+                <p class="fw-bold mb-0">Tên nhân viên</p>
+                <p class="text-muted mb-0" style="font-size: 0.9rem">Chức vụ</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- SỬA: Bọc nội dung trong .content-wrapper -->
+          <div class="content-wrapper">
+            <!-- Thanh công cụ: Tiêu đề, Lọc và Tìm kiếm -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="d-flex align-items-center">
+                <h5 class="fw-bold mb-0 me-3">Danh sách nhân viên</h5>
+                <select class="form-select form-select-sm" style="width: auto">
+                  <option selected>Đang làm, Tạm nghỉ</option>
+                  <option value="1">Đang làm</option>
+                  <option value="2">Tạm nghỉ</option>
+                </select>
+              </div>
+              <div class="input-group search-bar" style="max-width: 300px">
+                <span class="input-group-text bg-light border-0"
+                  ><i class="bi bi-search"></i
+                ></span>
+                <input
+                  type="text"
+                  class="form-control bg-light border-0"
+                  placeholder="Nhập mã nhân viên cần tìm"
+                  style="
+                    border-top-right-radius: 8px;
+                    border-bottom-right-radius: 8px;
+                  "
+                />
+              </div>
+            </div>
+
+            <!-- Bảng Nhân viên -->
+            <div class="table-container">
+              <table class="table table-hover align-middle">
+                <thead>
+                  <tr>
+                    <th scope="col" class="ps-4">Mã NV</th>
+                    <th scope="col">Họ tên</th>
+                    <th scope="col">Số điện thoại</th>
+                    <th scope="col">Chức vụ</th>
+                    <th scope="col">Mật khẩu</th>
+                    <th scope="col">Ngày vào làm</th>
+                    <th scope="col">Ca làm</th>
+                    <th scope="col">Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="ps-4">NV01</td>
+                    <td>Nguyễn Văn A</td>
+                    <td>0192838383</td>
+                    <td>Quản lý</td>
+                    <td>********</td>
+                    <td>20/01/2025</td>
+                    <td>7-12h</td>
+                    <td>Đang làm</td>
+                  </tr>
+                  <tr>
+                    <td class="ps-4">NV02</td>
+                    <td>Trần Thị B</td>
+                    <td>0192838384</td>
+                    <td>Nhân viên</td>
+                    <td>********</td>
+                    <td>21/01/2025</td>
+                    <td>7-12h</td>
+                    <td>Đang làm</td>
+                  </tr>
+                  <tr>
+                    <td class="ps-4">NV03</td>
+                    <td>Lê Văn C</td>
+                    <td>0192838385</td>
+                    <td>Nhân viên</td>
+                    <td>********</td>
+                    <td>22/01/2025</td>
+                    <td>13-22h</td>
+                    <td>Tạm nghỉ</td>
+                  </tr>
+                  <!-- Thêm vài dòng mẫu -->
+                  <tr>
+                    <td class="ps-4">NV04</td>
+                    <td>Phạm Thị D</td>
+                    <td>0192838386</td>
+                    <td>Nhân viên</td>
+                    <td>********</td>
+                    <td>23/01/2025</td>
+                    <td>7-12h</td>
+                    <td>Đang làm</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Form Quản lý Nhân viên -->
+            <div class="form-section">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label for="maNV" class="form-label fw-semibold"
+                    >Mã nhân viên:</label
+                  >
+                  <input type="text" class="form-control" id="maNV" />
+                </div>
+                <div class="col-md-6">
+                  <label for="hoTen" class="form-label fw-semibold"
+                    >Họ tên:</label
+                  >
+                  <input type="text" class="form-control" id="hoTen" />
+                </div>
+                <div class="col-md-4">
+                  <label for="soDienThoai" class="form-label fw-semibold"
+                    >Số điện thoại:</label
+                  >
+                  <input type="text" class="form-control" id="soDienThoai" />
+                </div>
+                <div class="col-md-4">
+                  <label for="chucVu" class="form-label fw-semibold"
+                    >Chức vụ:</label
+                  >
+                  <select id="chucVu" class="form-select">
+                    <option selected>Chọn...</option>
+                    <option>Quản lý</option>
+                    <option>Nhân viên</option>
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label for="matKhau" class="form-label fw-semibold"
+                    >Mật khẩu:</label
+                  >
+                  <input type="password" class="form-control" id="matKhau" />
+                </div>
+                <div class="col-md-4">
+                  <label for="ngayVaoLam" class="form-label fw-semibold"
+                    >Ngày vào làm:</label
+                  >
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="ngayVaoLam"
+                    placeholder="Cal pick ngay nha"
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label for="caLam" class="form-label fw-semibold"
+                    >Ca làm:</label
+                  >
+                  <input type="text" class="form-control" id="caLam" />
+                </div>
+                <div class="col-md-4">
+                  <label for="trangThai" class="form-label fw-semibold"
+                    >Trạng thái:</label
+                  >
+                  <select id="trangThai" class="form-select">
+                    <option selected>Chọn...</option>
+                    <option>Đang làm</option>
+                    <option>Tạm nghỉ</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Các nút chức năng -->
+            <div
+              class="action-buttons mt-5 d-flex gap-5 d-flex align-items-center justify-content-center"
+            >
+              <button class="btn btn-add col-2">Thêm</button>
+              <button class="btn btn-delete col-2">Xóa</button>
+              <button class="btn btn-update col-2">Sửa</button>
+              <button class="btn btn-save col-2">Lưu</button>
+            </div>
+          </div>
+          <!-- Đóng .content-wrapper -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Thông báo -->
+    <div
+      class="modal fade"
+      id="authModal"
+      tabindex="-1"
+      aria-labelledby="authModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold" id="authModalLabel">Thông báo</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body py-4">
+            Chỉ có quản lý mới được truy cập vào phần này!
+          </div>
+          <div class="modal-footer justify-content-center">
+            <button
+              type="button"
+              class="btn btn-light col-4"
+              data-bs-dismiss="modal"
+              style="border: 1px solid #dee2e6"
+            >
+              Quay lại
+            </button>
+            <button
+              type="button"
+              class="btn btn-success col-4"
+              data-bs-toggle="modal"
+              data-bs-target="#loginModal"
+              data-bs-dismiss="modal"
+            >
+              Đăng nhập
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Đăng nhập -->
+    <div
+      class="modal fade"
+      id="loginModal"
+      tabindex="-1"
+      aria-labelledby="loginModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold" id="loginModalLabel">Đăng nhập</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body py-4">
+            <form>
+              <div class="mb-3">
+                <label for="username" class="form-label">Tên đăng nhập</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="username"
+                  style="background-color: #f7f7f7"
+                />
+              </div>
+              <div class="mb-3">
+                <label for="password" class="form-label">Mật khẩu</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="password"
+                  style="background-color: #f7f7f7"
+                />
+              </div>
+            </form>
+          </div>
+          <div
+            class="modal-footer d-flex align-items-center justify-content-center"
+          >
+            <button
+              type="button"
+              class="btn btn-light col-4"
+              data-bs-dismiss="modal"
+              style="border: 1px solid #dee2e6"
+            >
+              Hủy
+            </button>
+            <button type="button" class="btn btn-purple col-4">
+              Đăng nhập
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

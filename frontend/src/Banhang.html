@@ -3,701 +3,1087 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TrangChu</title>
-     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap JS Bundle (bao gồm Popper) -->
+    <title>Trang Bán Hàng Hiện Đại</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  </head>
-  <body">
-    <!--====================================================================================================-->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
 
+    <style>
+      body {
+        font-family: "Be Vietnam Pro", sans-serif;
+        background-color: #f0f2f5;
+      }
+
+      .sidebar {
+        background-color: #ffffff;
+        border-right: 1px solid #dee2e6;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+      }
+
+      .sidebar .nav-link {
+        color: #5a5a5a;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        margin: 0.25rem 0; /* Giảm margin để các mục gần nhau hơn */
+        padding: 0.8rem 1rem;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        background-color: #0bb783;
+        color: #ffffff;
+      }
+
+      /* Thay đổi màu icon khi hover hoặc active */
+      .sidebar .nav-link:hover i,
+      .sidebar .nav-link.active i {
+        color: #ffffff !important;
+      }
+
+      .sidebar .nav-link i {
+        color: #5a5a5a;
+        transition: all 0.3s ease;
+      }
+
+      .main-content {
+        background-color: #f0f2f5;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      .header-bar {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 1rem 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .user-profile img {
+        border: 2px solid #0bb783;
+      }
+
+      .content-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+
+      .card-section-title {
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        color: #333;
+      }
+
+      .scrollable-area {
+        overflow-y: auto;
+        flex-grow: 1;
+      }
+
+      #product-list-wrapper .scrollable-area,
+      #selected-products-wrapper .scrollable-area {
+        max-height: 220px;
+      }
+
+      .scrollable-area::-webkit-scrollbar {
+        width: 6px;
+      }
+      .scrollable-area::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+      }
+      .scrollable-area::-webkit-scrollbar-thumb {
+        background: #0bb783;
+        border-radius: 10px;
+        transition: background 0.3s ease;
+      }
+      .scrollable-area::-webkit-scrollbar-thumb:hover {
+        background: #089469;
+      }
+
+      .order-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .order-item:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-color: #0bb783;
+        transform: translateY(-2px);
+      }
+      .order-item .status-badge {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.6rem;
+        font-weight: 500;
+      }
+
+      /* === CSS MỚI CHO MENU DỌC === */
+      .menu-list-wrapper {
+        /* Đặt max-height vừa đủ cho 4 item (padding 0.9rem * 2 + font-size 1rem + border 1px) * 4 = ~184px */
+        max-height: 184px;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 1.5rem; /* Match card-section-title margin */
+      }
+
+      /* Ghi đè flex-grow: 1 từ .scrollable-area để max-height hoạt động */
+      .menu-list-wrapper.scrollable-area {
+        flex-grow: 0;
+        overflow-y: auto;
+      }
+
+      .menu-category-list {
+        border-radius: 0; /* Bỏ border-radius của list-group */
+      }
+
+      .menu-category-list .list-group-item {
+        font-weight: 600;
+        color: #3f3d56;
+        border-radius: 0 !important; /* Ghi đè mọi bo góc */
+        border: none;
+        border-bottom: 1px solid #dee2e6;
+        padding: 0.9rem 1.25rem;
+        background-color: #ffffff;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+
+      .menu-category-list .list-group-item:last-child {
+        border-bottom: none;
+      }
+
+      /* Style cho nút active */
+      .menu-category-list .list-group-item.active {
+        color: #ffffff;
+        background-color: #0bb783;
+        border-color: #0bb783;
+      }
+
+      /* Áp bo tròn của wrapper cho item đầu và cuối */
+      /* Cần !important để ghi đè .list-group-item:first-child của Bootstrap */
+      .menu-list-wrapper .list-group-item:first-child {
+        border-top-left-radius: 7px !important;
+        border-top-right-radius: 7px !important;
+      }
+      .menu-list-wrapper .list-group-item:last-child {
+        border-bottom-left-radius: 7px !important;
+        border-bottom-right-radius: 7px !important;
+        border-bottom: none;
+      }
+
+      /* Style khi hover */
+      .menu-category-list .list-group-item:not(.active):hover {
+        background-color: #f8f9fa;
+      }
+      /* === KẾT THÚC CSS MỚI === */
+
+      .btn-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        padding: 0.6rem;
+        font-size: 0.95rem;
+      }
+
+      .table > :not(caption) > * > * {
+        padding: 0.8rem 0.8rem;
+        vertical-align: middle;
+      }
+
+      .invoice-summary span:first-child {
+        color: #555;
+      }
+
+      .btn-cyan {
+        background-color: #17a2b8;
+        color: white;
+      }
+      .btn-cyan:hover {
+        background-color: #138496;
+        color: white;
+      }
+      .btn-dark-gray {
+        background-color: #6c757d;
+        color: white;
+      }
+      .btn-dark-gray:hover {
+        background-color: #5a6268;
+        color: white;
+      }
+      .btn-reset {
+        background-color: white;
+        color: #dc3545;
+        border: 1px solid #dc3545;
+      }
+      .btn-reset:hover {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      /* === FINAL FIX: Re-balance columns and prevent header wrapping === */
+      .table-selected-products {
+        table-layout: fixed;
+        width: 100%;
+        word-wrap: break-word;
+        font-size: 14px;
+      }
+      .table-selected-products th,
+      .table-selected-products td {
+        border: none;
+        vertical-align: middle;
+      }
+      .table-selected-products th {
+        border-bottom: 1px solid #dee2e6;
+        white-space: nowrap; /* Prevents header text like "Hủy" from wrapping */
+      }
+      .table-selected-products tbody tr {
+        border-bottom: 1px solid #f0f0f0;
+      }
+      .table-selected-products tbody tr:last-child {
+        border-bottom: none;
+      }
+
+      /* Adjusted column widths */
+      .table-selected-products .col-name {
+        width: 35%;
+      }
+      .table-selected-products .col-quantity {
+        width: 30%;
+      }
+      .table-selected-products .col-total {
+        width: 20%;
+      }
+      .table-selected-products .col-delete {
+        width: 15%;
+      }
+    </style>
+  </head>
+
+  <body>
     <div class="container-fluid">
       <div class="row">
-        <div
-          class="col-xl-2 container-fluid" 
-          
-        >
-          <nav class="navbar d-flex justify-content-center mt-4">
-          <div class="d-flex align-items-center container-fluid justify-content-xl-center">
-               <button class="navbar-toggler d-block d-xl-none " type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-                       <div class="nav-item d-flex align-items-center">
-                      <svg class="" width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-<rect width="56" height="56" rx="8" fill="#0BB783"/>
-<path d="M22.3743 17.6274C21.2422 18.7805 21.2422 20.6464 22.3952 21.7994L24.911 24.3152C27.28 26.6842 27.28 30.5418 24.911 32.9108L20.2988 28.2985C19.1143 27.114 18.5168 25.5521 18.5168 24.0007C18.5168 22.4493 19.1143 20.8875 20.2988 19.7029L22.3428 17.6589C22.3533 17.6484 22.3638 17.6379 22.3743 17.6274Z" fill="#0BB783" stroke="white" stroke-width="2" stroke-miterlimit="10"/>
-<path d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176" fill="#0BB783"/>
-<path d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176" stroke="white" stroke-width="2" stroke-miterlimit="10"/>
-<path d="M34.2715 38.2246C35.4036 37.0716 35.4036 35.2057 34.2505 34.0526L31.7348 31.5368C29.3657 29.1678 29.3657 25.3103 31.7348 22.9413L36.347 27.5535C37.5315 28.738 38.129 30.2999 38.129 31.8513C38.129 33.4027 37.5315 34.9646 36.347 36.1491L34.3029 38.1932C34.282 38.2141 34.2715 38.2246 34.2715 38.2246Z" fill="#0BB783" stroke="white" stroke-width="2" stroke-miterlimit="10"/>
-<path d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332" fill="#0BB783"/>
-<path d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332" stroke="white" stroke-width="2" stroke-miterlimit="10"/>
-</svg>
-              <a class="navbar-brand ms-2" href="#">LOGO</a>
-                    </div>
-          </div>
-            <div>
-            <div  class="collapse-xl  navbar-collapse " id="navbarSupportedContent">
-                <ul class="navbar-nav flex-row flex-xl-column">
-                  <li class="nav-item  d-flex mt-4 btn btn-outline-success border border-0 align-items-center hover:text-white">
-                 <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M21.3333 11.2134L15.3333 5.21337L5.88 14.6667H8V25.3334H12V17.3334H18.6667V25.3334H22.6667V14.6667H24.7867L22.6667 12.5467V8.00004H21.3333V11.2134ZM2.66666 16L15.3333 3.33337L20 8.00004V6.66671H24V12L28 16H24V26.6667H17.3333V18.6667H13.3333V26.6667H6.66666V16H2.66666Z" fill="#737791"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold active" aria-current="page" href="Trangchu.html">Trang chủ</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success align-items-center border border-0">
-                    <svg class="" width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M1 1H3.66667L4.2 3.66667M6.33333 14.3333H19.6667L25 3.66667H4.2M6.33333 14.3333L4.2 3.66667M6.33333 14.3333L3.27614 17.3905C2.43619 18.2305 3.03108 19.6667 4.21895 19.6667H19.6667M19.6667 19.6667C18.1939 19.6667 17 20.8606 17 22.3333C17 23.8061 18.1939 25 19.6667 25C21.1394 25 22.3333 23.8061 22.3333 22.3333C22.3333 20.8606 21.1394 19.6667 19.6667 19.6667ZM9 22.3333C9 23.8061 7.80609 25 6.33333 25C4.86057 25 3.66667 23.8061 3.66667 22.3333C3.66667 20.8606 4.86057 19.6667 6.33333 19.6667C7.80609 19.6667 9 20.8606 9 22.3333Z" stroke="#737791" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="Banhang.html">Bán hàng</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success border border-0 align-items-center">
-                    <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M4 16H6.66667V28H4V16ZM25.3333 10.6666H28V28H25.3333V10.6666ZM14.6667 2.66663H17.3333V28H14.6667V2.66663Z" fill="#737791"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="#">Thống kê</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success border border-0 align-items-center">
-                    <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M25.3333 8.00004H22.6667C22.6667 4.26671 19.7333 1.33337 16 1.33337C12.2667 1.33337 9.33333 4.26671 9.33333 8.00004H6.66667C5.2 8.00004 4 9.20004 4 10.6667V26.6667C4 28.1334 5.2 29.3334 6.66667 29.3334H25.3333C26.8 29.3334 28 28.1334 28 26.6667V10.6667C28 9.20004 26.8 8.00004 25.3333 8.00004ZM16 4.00004C18.2667 4.00004 20 5.73337 20 8.00004H12C12 5.73337 13.7333 4.00004 16 4.00004ZM25.3333 26.6667H6.66667V10.6667H25.3333V26.6667ZM16 16C13.7333 16 12 14.2667 12 12H9.33333C9.33333 15.7334 12.2667 18.6667 16 18.6667C19.7333 18.6667 22.6667 15.7334 22.6667 12H20C20 14.2667 18.2667 16 16 16Z" fill="#737791"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="#">Sản phẩm</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success border border-0 align-items-center">
-                    <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M26.6667 29.3333H5.33333C4.97971 29.3333 4.64057 29.1928 4.39052 28.9428C4.14048 28.6927 4 28.3536 4 28V3.99996C4 3.64634 4.14048 3.3072 4.39052 3.05715C4.64057 2.8071 4.97971 2.66663 5.33333 2.66663H26.6667C27.0203 2.66663 27.3594 2.8071 27.6095 3.05715C27.8595 3.3072 28 3.64634 28 3.99996V28C28 28.3536 27.8595 28.6927 27.6095 28.9428C27.3594 29.1928 27.0203 29.3333 26.6667 29.3333ZM25.3333 26.6666V5.33329H6.66667V26.6666H25.3333ZM10.6667 12H21.3333V14.6666H10.6667V12ZM10.6667 17.3333H21.3333V20H10.6667V17.3333Z" fill="#737791"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="#">Hóa đơn</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success border border-0 align-items-center">
-                    <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M21.3333 14.6666C23.5467 14.6666 25.32 12.88 25.32 10.6666C25.32 8.45329 23.5467 6.66663 21.3333 6.66663C19.12 6.66663 17.3333 8.45329 17.3333 10.6666C17.3333 12.88 19.12 14.6666 21.3333 14.6666ZM10.6667 14.6666C12.88 14.6666 14.6533 12.88 14.6533 10.6666C14.6533 8.45329 12.88 6.66663 10.6667 6.66663C8.45334 6.66663 6.66667 8.45329 6.66667 10.6666C6.66667 12.88 8.45334 14.6666 10.6667 14.6666ZM10.6667 17.3333C7.56 17.3333 1.33334 18.8933 1.33334 22V24C1.33334 24.7333 1.93334 25.3333 2.66667 25.3333H18.6667C19.4 25.3333 20 24.7333 20 24V22C20 18.8933 13.7733 17.3333 10.6667 17.3333ZM21.3333 17.3333C20.9467 17.3333 20.5067 17.36 20.04 17.4C20.0667 17.4133 20.08 17.44 20.0933 17.4533C21.6133 18.56 22.6667 20.04 22.6667 22V24C22.6667 24.4666 22.5733 24.92 22.4267 25.3333H29.3333C30.0667 25.3333 30.6667 24.7333 30.6667 24V22C30.6667 18.8933 24.44 17.3333 21.3333 17.3333Z" fill="#737791"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="#">Nhân viên</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success border border-0 align-items-center">
-                    <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M28.523 23.813C28.005 23.303 21.728 20.875 20.589 20.417C19.456 19.967 19.004 18.72 19.004 18.72C19.004 18.72 18.494 19.002 18.494 18.21C18.494 17.417 19.004 18.72 19.514 15.662C19.514 15.662 20.929 15.265 20.648 11.982H20.308C20.308 11.982 21.158 8.47203 20.308 7.28403C19.455 6.09603 19.121 5.30403 17.248 4.73603C15.378 4.16903 16.058 4.28203 14.7 4.34003C13.34 4.39703 12.208 5.13303 12.208 5.52803C12.208 5.52803 11.358 5.58503 11.02 5.92503C10.68 6.26503 10.114 7.84903 10.114 8.24503C10.114 8.64103 10.397 11.305 10.68 11.869L10.343 11.979C10.06 15.263 11.475 15.661 11.475 15.661C11.985 18.719 12.495 17.416 12.495 18.209C12.495 19.001 11.985 18.719 11.985 18.719C11.985 18.719 11.532 19.965 10.4 20.416C9.268 20.869 2.984 23.303 2.473 23.812C1.963 24.332 2.02 26.708 2.02 26.708H14.056L14.934 23.248L14.154 22.468L15.497 21.123L16.84 22.467L16.06 23.247L16.938 26.707H28.974C28.974 26.707 29.037 24.329 28.521 23.81L28.523 23.813Z" fill="#737791"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="#">Khách hàng</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success border border-0 align-items-center">
-                <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M12.6667 9.3333C13.7733 9.3333 14.6667 10.2266 14.6667 11.3333C14.6667 12.44 13.7733 13.3333 12.6667 13.3333C11.56 13.3333 10.6667 12.44 10.6667 11.3333C10.6667 10.2266 11.56 9.3333 12.6667 9.3333ZM19.3333 18.6666C20.44 18.6666 21.3333 19.56 21.3333 20.6666C21.3333 21.7733 20.44 22.6666 19.3333 22.6666C18.2267 22.6666 17.3333 21.7733 17.3333 20.6666C17.3333 19.56 18.2267 18.6666 19.3333 18.6666ZM11.2133 22.6666L9.33333 20.7866L20.7867 9.3333L22.6667 11.2133L11.2133 22.6666ZM24.8667 3.79997L25.68 8.94664L30.36 11.3333L28 16L30.3733 20.6666L25.6533 23.0533L24.84 28.2L19.6533 27.3866L15.96 31.08L12.2533 27.3333L7.10666 28.1866L6.28 23L1.62666 20.6266L4 15.96L1.64 11.3333L6.32 8.91997L7.13333 3.82664L12.2933 4.66664L16 0.926636L19.68 4.6133L24.8667 3.79997ZM26.8 12.4933L23.3333 10.6666L22.6667 6.8133L18.8 7.3733L16 4.66664L13.2 7.3733L9.33333 6.8133L8.66666 10.6666L5.2 12.4933L6.93333 16L5.2 19.5066L8.66666 21.3333L9.33333 25.1866L13.2 24.6266L16 27.3333L18.8 24.6266L22.6667 25.1866L23.3333 21.3333L26.8 19.5066L25.0667 16L26.8 12.4933Z" fill="#737791"/>
-</svg>
-
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="#">Khuyến mãi</a>
-                  </li>
-                  <li class="nav-item d-flex mt-4 btn btn-outline-success border border-0 align-items-center">
-                    <svg class="" width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M21.7747 22.2011L26.3371 16.8777C26.555 16.6292 26.6665 16.3154 26.6666 16C26.6667 15.7842 26.6147 15.5676 26.5091 15.3706C26.4621 15.2828 26.4047 15.1994 26.3371 15.1223L21.7747 9.79894C21.2955 9.23982 20.4538 9.17502 19.8947 9.65422C19.3356 10.1334 19.2708 10.9751 19.75 11.5343L22.4345 14.6666L12.1083 14.6666C11.3719 14.6666 10.775 15.2636 10.775 15.9999C10.775 16.7363 11.3719 17.3333 12.1083 17.3333L22.4347 17.3333L19.75 20.4658C19.2708 21.0249 19.3356 21.8666 19.8947 22.3458C20.4538 22.825 21.2955 22.7602 21.7747 22.2011ZM13.3333 7.99992C14.0697 7.99992 14.6666 8.59687 14.6666 9.33325L14.6666 11.3333C14.6666 12.0696 15.2636 12.6666 16 12.6666C16.7363 12.6666 17.3333 12.0696 17.3333 11.3333L17.3333 9.33325C17.3333 7.12411 15.5424 5.33325 13.3333 5.33325L9.33329 5.33325C7.12415 5.33325 5.33329 7.12411 5.33329 9.33325L5.33329 22.6666C5.33329 24.8757 7.12415 26.6666 9.33329 26.6666L13.3333 26.6666C15.5424 26.6666 17.3333 24.8757 17.3333 22.6666L17.3333 20.6666C17.3333 19.9302 16.7363 19.3333 16 19.3333C15.2636 19.3333 14.6666 19.9302 14.6666 20.6666L14.6666 22.6666C14.6666 23.403 14.0697 23.9999 13.3333 23.9999L9.33329 23.9999C8.59691 23.9999 7.99996 23.403 7.99996 22.6666L7.99996 9.33325C7.99996 8.59687 8.59691 7.99992 9.33329 7.99992L13.3333 7.99992Z" fill="#737791"/>
-</svg>
-
-                    <a class="nav-link ms-2 me-auto ms-auto fw-semibold" href="#">Đăng xuất</a>
-                  </li>
-                </ul>
-              </div>
+        <div class="col-xl-2 px-0 sidebar d-none d-xl-block">
+          <nav class="navbar mt-4 d-flex flex-column align-items-stretch">
+            <div
+              class="nav-item d-flex align-items-center justify-content-center mb-4"
+            >
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 56 56"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect width="56" height="56" rx="8" fill="#0BB783" />
+                <path
+                  d="M22.3743 17.6274C21.2422 18.7805 21.2422 20.6464 22.3952 21.7994L24.911 24.3152C27.28 26.6842 27.28 30.5418 24.911 32.9108L20.2988 28.2985C19.1143 27.114 18.5168 25.5521 18.5168 24.0007C18.5168 22.4493 19.1143 20.8875 20.2988 19.7029L22.3428 17.6589C22.3533 17.6484 22.3638 17.6379 22.3743 17.6274Z"
+                  fill="#0BB783"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176"
+                  fill="#0BB783"
+                />
+                <path
+                  d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M34.2715 38.2246C35.4036 37.0716 35.4036 35.2057 34.2505 34.0526L31.7348 31.5368C29.3657 29.1678 29.3657 25.3103 31.7348 22.9413L36.347 27.5535C37.5315 28.738 38.129 30.2999 38.129 31.8513C38.129 33.4027 37.5315 34.9646 36.347 36.1491L34.3029 38.1932C34.282 38.2141 34.2715 38.2246 34.2715 38.2246Z"
+                  fill="#0BB783"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332"
+                  fill="#0BB783"
+                />
+                <path
+                  d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+              </svg>
+              <a class="navbar-brand ms-2 fw-bold fs-4" href="#">LOGO</a>
             </div>
+
+            <ul class="navbar-nav flex-column w-100 px-3">
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center" href="index.html">
+                  <i class="bi bi-house-door fs-5"></i>
+                  <span class="ms-3 fw-semibold">Trang chủ</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="BanHang.html"
+                >
+                  <i class="bi bi-cart3 fs-5"></i>
+                  <span class="ms-3 fw-semibold">Bán hàng</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center" href="#">
+                  <i class="bi bi-bar-chart-line fs-5"></i>
+                  <span class="ms-3 fw-semibold">Thống kê</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="SanPham.html"
+                >
+                  <i class="bi bi-bag fs-5"></i>
+                  <span class="ms-3 fw-semibold">Sản phẩm | Menu</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="HoaDon.html"
+                >
+                  <i class="bi bi-receipt fs-5"></i>
+                  <span class="ms-3 fw-semibold">Hóa đơn</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="NhanVien.html"
+                  data-bs-toggle="modal"
+                  data-bs-target="#authModal"
+                >
+                  <i class="bi bi-people fs-5"></i>
+                  <span class="ms-3 fw-semibold">Nhân viên</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="KhachHang.html"
+                >
+                  <i class="bi bi-person fs-5"></i>
+                  <span class="ms-3 fw-semibold">Khách hàng</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="KhuyenMai.html"
+                >
+                  <i class="bi bi-tag fs-5"></i>
+                  <span class="ms-3 fw-semibold">Khuyến mãi</span>
+                </a>
+              </li>
+              <li class="nav-item mt-4">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="DangNhap.html"
+                >
+                  <i class="bi bi-box-arrow-right fs-5"></i>
+                  <span class="ms-3 fw-semibold">Đăng xuất</span>
+                </a>
+              </li>
+            </ul>
           </nav>
         </div>
-        <div class="col-xl-10 container-fluid">
-          <div class="row">
-            <div class="d-flex justify-content-between align-items-center" style="height: 120px;">
-              <h1 class="ps-1">Trang chủ</h1>
-           
-              <div class="text d-flex align-items-center ps-1">
-                 <img class="rounded-4" src="../../public/images/Files/anhdaidien.jpg" alt=hinh tai khoan" style="width: 60px;height: 60px;">
-                <div class="text ps-3 pt-3 pe-4">
-                 <p class="fw-bold">Tên nhân viên</p>
-                 <p>Chức vụ</p>
-                </div>
+
+        <div class="col-xl-10 col-12 main-content">
+          <div
+            class="header-bar d-flex justify-content-between align-items-center"
+          >
+            <h1 class="h3 mb-0">Bán Hàng</h1>
+            <div class="d-flex align-items-center user-profile">
+              <img
+                class="rounded-circle"
+                src="https://i.pravatar.cc/60"
+                alt="Avatar"
+                style="width: 60px; height: 60px"
+              />
+              <div class="ms-3">
+                <p class="fw-bold mb-0">Tên nhân viên</p>
+                <p class="text-muted mb-0" style="font-size: 0.9rem">Chức vụ</p>
               </div>
-            
             </div>
           </div>
-            <div class="row ps-2 border border-2 rounded-3 border-success-subtle">
-             <div class="col-4 mt-3">
-                <h5>Danh sách order</h5>
-                <div class="row overflow-y-scroll h-75">
-                    <div class="col-6 ">
-                        <div class="nd border border-success p-3 d-inline-block rounded-3">
-                        <p><span>Trạng thái: </span>Chưa giao</p>
-                        <p><span>Tổng Tiền: </span>180.000đ</p>
-                        <p><span>Thời gian vào: </span>12:30 PM</p>
-                        <p><span>Hình thức: </span>Hình thức Tại quán</p>
-                        <p class="rounded-pill bg-success text-center text-white"  >Đã giao</p>
+
+          <div class="row g-4">
+            <div class="col-lg-4 col-md-12">
+              <div class="content-card">
+                <h5 class="card-section-title">Danh sách Order</h5>
+                <div class="scrollable-area pe-2">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <div class="order-item">
+                        <div
+                          class="d-flex justify-content-between align-items-center mb-2"
+                        >
+                          <p class="mb-0 fw-bold">Order #1 - Bàn 5</p>
+                          <span
+                            class="badge rounded-pill text-bg-warning status-badge"
+                            >Chưa giao</span
+                          >
                         </div>
+                        <p class="mb-1 text-muted small">Thời gian: 12:30 PM</p>
+                        <p class="mb-0 fw-semibold">Tổng tiền: 180.000đ</p>
+                      </div>
                     </div>
-                    <div class="col-6">
-                        <div class="nd border border-success p-3 d-inline-block rounded-3">
-                        <p><span>Trạng thái: </span>Chưa giao</p>
-                        <p><span>Tổng Tiền: </span>180.000đ</p>
-                        <p><span>Thời gian vào: </span>12:30 PM</p>
-                        <p><span>Hình thức: </span>Hình thức Tại quán</p>
-                        <p class="rounded-pill bg-success text-center text-white"  >Đã giao</p>
+                    <div class="col-12">
+                      <div class="order-item">
+                        <div
+                          class="d-flex justify-content-between align-items-center mb-2"
+                        >
+                          <p class="mb-0 fw-bold">Order #2 - Mang về</p>
+                          <span
+                            class="badge rounded-pill text-bg-success status-badge"
+                            >Đã giao</span
+                          >
                         </div>
+                        <p class="mb-1 text-muted small">Thời gian: 12:45 PM</p>
+                        <p class="mb-0 fw-semibold">Tổng tiền: 250.000đ</p>
+                      </div>
                     </div>
-                    <div class="col-6" style="margin-top: -130px;">
-                        <div class="nd border border-success p-3 d-inline-block rounded-3">
-                        <p><span>Trạng thái: </span>Chưa giao</p>
-                        <p><span>Tổng Tiền: </span>180.000đ</p>
-                        <p><span>Thời gian vào: </span>12:30 PM</p>
-                        <p><span>Hình thức: </span>Hình thức Tại quán</p>
-                        <p class="rounded-pill bg-secondary text-center text-white"  >Đã giao</p>
-                        </div>
-                    </div>
+                  </div>
                 </div>
-                <div class="row mt-1">
-                    <div class="col-6 d-flex justify-content-center p-2">
-                        <button type="button " class="btn btn-primary">
-                            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M15 0C6.7155 0 0 6.7155 0 15C0 23.2845 6.7155 30 15 30C23.2845 30 30 23.2845 30 15C30 6.7155 23.2845 0 15 0ZM22.5 16.5H16.5V22.5H13.5V16.5H7.5V13.5H13.5V7.5H16.5V13.5H22.5V16.5Z" fill="white"/>
-</svg>
-
-                            <p class="m-0">Thêm order tại quán</p>
-                        </button>
-                    </div>
-                     <div class="col-6 d-flex justify-content-center p-2">
-                        <button type="button " class="btn btn-success ">
-                            <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M15 0C6.7155 0 0 6.7155 0 15C0 23.2845 6.7155 30 15 30C23.2845 30 30 23.2845 30 15C30 6.7155 23.2845 0 15 0ZM22.5 16.5H16.5V22.5H13.5V16.5H7.5V13.5H13.5V7.5H16.5V13.5H22.5V16.5Z" fill="white"/>
-</svg>
-
-                            <p class="m-0">Thêm order mang về</p>
-                        </button>
-                    </div>
+                <div class="row mt-auto pt-3 gx-2">
+                  <div class="col-6">
+                    <button
+                      type="button"
+                      class="btn btn-primary w-100 btn-action"
+                    >
+                      <i class="bi bi-plus-circle"></i> <span>Tại quán</span>
+                    </button>
+                  </div>
+                  <div class="col-6">
+                    <button
+                      type="button"
+                      class="btn btn-success w-100 btn-action"
+                    >
+                      <i class="bi bi-bag-plus"></i> <span>Mang về</span>
+                    </button>
+                  </div>
                 </div>
-             </div>
-             <div class="col-4 mt-3">
-                <h5>Order</h5>
-                <span>Menu</span>
-                <div class="row p-1">
-                    <ul class="list-group list-group-horizontal-sm">
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Sữa chua</li>
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Trà</li>
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Cà phê</li>
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Đá xay</li>
-                    </ul>
-                </div>
-                <div class="row p-1">
-                    <ul class="list-group list-group-horizontal-sm">
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Trà sữa</li>
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Sinh tố</li>
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Socola</li>
-                        <li class="list-group-item d-flex align-content-center justify-content-center border border-2 col-3 m-1 btn btn-success" style="font-size: 14px;">Nước ép</li>
-                    </ul>
-                </div>
-                <div class="row overflow-y-scroll h-25 d-flex justify-content-center mb-4">
-                 <table class="table table-bordered m-2 d-flex align-content-center justify-content-center text-center align-middle" style="width: auto; table-layout: auto;">
-                  <tr>
-                    <th>Tên món</th>
-                    <th>Size</th>
-                    <th>Giá</th>
-                    <th>Chọn</th>
-                  </tr>
-                  <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td class="bg-success"><div class="btn btn-success fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                   <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td class="bg-success"><div class="btn btn-success fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                   <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td class="bg-success"><div class="btn btn-success fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                   <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td class="bg-success"><div class="btn btn-success fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                 </table>
-                </div>
-                <span>Sản phẩm order</span>
-                <div class="row overflow-y-scroll overflow-x-auto mt-3 h-25 d-flex justify-content-center">
-                  
-                 <table class="table table-bordered text-center align-middle" style="width: auto; table-layout: auto; font-size: 12px;">
-                  <tr class="p-0">
-                    <th>Tên món</th>
-                    <th>Size</th>
-                    <th>Giá</th>
-                    <th>Số lượng</th>
-                    <th>Tăng/Giảm</th>
-                    <th>Tổng Tiền</th>
-                    <th>Hủy</th>
-                  </tr>
-                  <tr class="p-0">
-                    <td>Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td>1</td>
-                    <td><div  class="d-flex align-items-baseline justify-content-center" ><p class="pe-2 btn m-0 ">+</p><p>|</p><p class="ps-2 btn m-0 ">-</p></div></td>
-                    <td>80.000</td>
-                    <td class="bg-danger"><div class="btn btn-danger fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                   <tr class="p-0">
-                     <td>Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td>2</td>
-                    <td><div  class="d-flex align-items-baseline justify-content-center" ><p class="pe-2 btn m-0 ">+</p><p>|</p><p class="ps-2 btn m-0 ">-</p></div></td>
-                    <td>80.000</td>
-                    <td class="bg-danger"><div class="btn btn-danger fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                   <tr class="p-0">
-                     <td>Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td>3</td>
-                    <td><div  class="d-flex align-items-baseline justify-content-center" ><p class="pe-2 btn m-0 ">+</p><p>|</p><p class="ps-2 btn m-0 ">-</p></div></td>
-                    <td>80.000</td>
-                    <td class="bg-danger"><div class="btn btn-danger fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                   <tr class="p-0">
-                     <td>Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td>4</td>
-                    <td><div  class="d-flex align-items-baseline justify-content-center" ><p class="pe-2 btn m-0 ">+</p><p>|</p><p class="ps-2 btn m-0 ">-</p></div></td>
-                    <td>80.000</td>
-                    <td class="bg-danger"><div class="btn btn-danger fw-semibold border border-0 rounded-0">Hủy</div></td>
-                  </tr>
-                 </table>
-                </div>
-                <div class="row mt-5">
-                    <div class="col-5 d-flex justify-content-center p-2">
-                        <button type="submit " class="btn btn-light text-white d-flex align-items-center justify-content-center " style="background-color: #8C0BB7;" data-bs-toggle="modal" data-bs-target="#mergeOrderModal">
-                         <svg width="23" height="24" viewBox="0 0 23 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M11.7749 0.800049C11.9672 0.800049 12.1516 0.873799 12.2876 1.00507C12.4235 1.13635 12.4999 1.3144 12.4999 1.50005V22.5C12.4999 22.6857 12.4235 22.8637 12.2876 22.995C12.1516 23.1263 11.9672 23.2 11.7749 23.2C11.5826 23.2 11.3982 23.1263 11.2622 22.995C11.1263 22.8637 11.0499 22.6857 11.0499 22.5V1.50005C11.0499 1.3144 11.1263 1.13635 11.2622 1.00507C11.3982 0.873799 11.5826 0.800049 11.7749 0.800049ZM3.7999 3.60005C3.03077 3.60005 2.29315 3.89505 1.74929 4.42015C1.20544 4.94525 0.899902 5.65744 0.899902 6.40005V17.6C0.899902 18.3427 1.20544 19.0548 1.74929 19.5799C2.29315 20.105 3.03077 20.4 3.7999 20.4H9.5999V3.60005H3.7999ZM19.7499 5.00005C20.1345 5.00005 20.5033 5.14755 20.7752 5.4101C21.0471 5.67265 21.1999 6.02875 21.1999 6.40005V7.10005C21.1999 7.2857 21.2763 7.46375 21.4123 7.59502C21.5482 7.7263 21.7326 7.80005 21.9249 7.80005C22.1172 7.80005 22.3016 7.7263 22.4376 7.59502C22.5735 7.46375 22.6499 7.2857 22.6499 7.10005V6.40005C22.6499 5.65744 22.3444 4.94525 21.8005 4.42015C21.2567 3.89505 20.519 3.60005 19.7499 3.60005H19.0249C18.8326 3.60005 18.6482 3.6738 18.5123 3.80507C18.3763 3.93635 18.2999 4.1144 18.2999 4.30005C18.2999 4.4857 18.3763 4.66375 18.5123 4.79502C18.6482 4.9263 18.8326 5.00005 19.0249 5.00005H19.7499ZM19.7499 19C20.1345 19 20.5033 18.8525 20.7752 18.59C21.0471 18.3274 21.1999 17.9714 21.1999 17.6V16.9C21.1999 16.7144 21.2763 16.5363 21.4123 16.4051C21.5482 16.2738 21.7326 16.2 21.9249 16.2C22.1172 16.2 22.3016 16.2738 22.4376 16.4051C22.5735 16.5363 22.6499 16.7144 22.6499 16.9V17.6C22.6499 18.3427 22.3444 19.0548 21.8005 19.5799C21.2567 20.105 20.519 20.4 19.7499 20.4H19.0249C18.8326 20.4 18.6482 20.3263 18.5123 20.195C18.3763 20.0637 18.2999 19.8857 18.2999 19.7C18.2999 19.5144 18.3763 19.3363 18.5123 19.2051C18.6482 19.0738 18.8326 19 19.0249 19H19.7499ZM21.9249 9.20005C21.7326 9.20005 21.5482 9.2738 21.4123 9.40507C21.2763 9.53635 21.1999 9.7144 21.1999 9.90005V14.1C21.1999 14.2857 21.2763 14.4637 21.4123 14.595C21.5482 14.7263 21.7326 14.8 21.9249 14.8C22.1172 14.8 22.3016 14.7263 22.4376 14.595C22.5735 14.4637 22.6499 14.2857 22.6499 14.1V9.90005C22.6499 9.7144 22.5735 9.53635 22.4376 9.40507C22.3016 9.2738 22.1172 9.20005 21.9249 9.20005ZM16.1249 3.60005C16.3172 3.60005 16.5016 3.6738 16.6376 3.80507C16.7735 3.93635 16.8499 4.1144 16.8499 4.30005C16.8499 4.4857 16.7735 4.66375 16.6376 4.79502C16.5016 4.9263 16.3172 5.00005 16.1249 5.00005H14.6749C14.4826 5.00005 14.2982 4.9263 14.1622 4.79502C14.0263 4.66375 13.9499 4.4857 13.9499 4.30005C13.9499 4.1144 14.0263 3.93635 14.1622 3.80507C14.2982 3.6738 14.4826 3.60005 14.6749 3.60005H16.1249ZM16.8499 19.7C16.8499 19.5144 16.7735 19.3363 16.6376 19.2051C16.5016 19.0738 16.3172 19 16.1249 19H14.6749C14.4826 19 14.2982 19.0738 14.1622 19.2051C14.0263 19.3363 13.9499 19.5144 13.9499 19.7C13.9499 19.8857 14.0263 20.0637 14.1622 20.195C14.2982 20.3263 14.4826 20.4 14.6749 20.4H16.1249C16.3172 20.4 16.5016 20.3263 16.6376 20.195C16.7735 20.0637 16.8499 19.8857 16.8499 19.7Z" fill="white"/>
-</svg>
-
-
-                            <p class="m-0 ms-2">Gộp order</p>
-                        </button>
-                    </div>
-                     <div class="col-7 d-flex justify-content-center p-2">
-                        <button type="submit" class="btn btn-light text-white d-flex align-items-center justify-content-center " style="background-color: #FF6B01;"  data-bs-toggle="modal" data-bs-target="#confirmModal">
-                          <svg width="28" height="29" viewBox="0 0 28 29" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g clip-path="url(#clip0_8_211)">
-<path d="M15.8375 0.788437C14.8225 -0.262812 13.1775 -0.262812 12.1625 0.788437L0.762959 12.5969C-0.252041 13.6481 -0.252041 15.3501 0.762959 16.3995L12.166 28.2098C13.181 29.261 14.8242 29.261 15.8375 28.2098L27.2405 16.3995C28.2555 15.3483 28.2555 13.6463 27.2405 12.5969L15.8375 0.788437ZM15.75 15.3446V12.6875H13.125C12.4288 12.6875 11.7611 12.9739 11.2688 13.4838C10.7765 13.9937 10.5 14.6852 10.5 15.4062V19.9375H8.74996V15.4062C8.74996 14.2045 9.2109 13.0519 10.0314 12.2022C10.8518 11.3524 11.9646 10.875 13.125 10.875H15.75V8.21787C15.75 8.13177 15.7737 8.04747 15.8183 7.97482C15.863 7.90218 15.9266 7.8442 16.0019 7.80769C16.0772 7.77117 16.161 7.75763 16.2434 7.76864C16.3259 7.77966 16.4036 7.81477 16.4675 7.86987L20.5975 11.4333C20.8075 11.6145 20.8075 11.948 20.5975 12.1292L16.4675 15.6926C16.4036 15.7477 16.3259 15.7828 16.2434 15.7939C16.161 15.8049 16.0772 15.7913 16.0019 15.7548C15.9266 15.7183 15.863 15.6603 15.8183 15.5877C15.7737 15.515 15.75 15.4307 15.75 15.3446Z" fill="white"/>
-</g>
-<defs>
-<clipPath id="clip0_8_211">
-<rect width="28" height="29" fill="white"/>
-</clipPath>
-</defs>
-</svg>
-
-
-                            <p class="m-0 ms-2">Chuyển hóa đơn</p>
-                        </button>
-                    </div>
-                </div>
-             </div>
-             <div class="col-4 mt-3">
-              <h5 class="ms-2">Hóa đơn</h5>
-              <span class="ms-2">Mã hóa đơn <span>XXX</span></span>
-              <div class="overflow-y-scroll h-25 d-flex justify-content-center mb-4">
-                 <table class="table table-bordered m-2 d-flex align-content-center justify-content-center text-center align-middle" style="width: auto; table-layout: auto;font-size: 13px;">
-                  <tr>
-                    <th>Tên món</th>
-                    <th>Size</th>
-                    <th>Giá</th>
-                    <th>Số lượng</th>
-                    <th>Tổng tiền</th>
-                  </tr>
-                  <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                    <td>1</td>
-                    <td>20.000</td>
-                  </tr>
-                   <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                     <td>1</td>
-                    <td>20.000</td>
-                  </tr>
-                   <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                     <td>1</td>
-                    <td>20.000</td>
-                  </tr>
-                   <tr>
-                    <td class="ps-4 pe-4">Sữa chua dâu</td>
-                    <td>L</td>
-                    <td>20.000</td>
-                     <td>1</td>
-                    <td>20.000</td>
-                  </tr>
-                 </table>
               </div>
-               <div class="form-group row">
-                    <label for="name" class="col-3 ms-3">Họ và tên:</label>
-                    <input type="text" id="name" class="col-7" />
-              </div>
-              <div class="row mt-3">
-                <div class="col-3 ms-3">
-                  <p>Bàn:</p>
-                </div>
-                 <div class="col-4">
-                  <p>Ngày:</p>
-                </div>
-                 <div class="col-4">
-                  <p>Giờ vào bàn</p>
-                </div>
-              </div>    
-              <div class="row">
-                <div class="col-3 ms-3">
-                  <select id="Bàn">
-                  <option>Bàn 01</option>
-                  <option>Bàn 02</option>
-                  <option>Bàn 03</option>
-                  </select>
-                </div>
-                 <div class="col-4">
-                  <input type="date" id="ngay" name="ngay"  value="2025-03-20">
-                </div>
-                 <div class="col-4">
-                  <input type="time" name="gio" id="gio" value="19:30">
-                </div>
-              </div> 
-              <div class="form-group row mt-4">
-                    <label for="name" class="col-3 ms-3">Thành tiền:</label>
-                    <input type="text" id="name" class="col-7" />
-              </div>
-              <div class="form-group row mt-4">
-                    <label for="name" class="col-3 ms-3">Thuế VAT:</label>
-                     <select id="Bàn" class="col-2">
-                     <option>10%</option>
-                     <option>20%</option>
-                     <option>30%</option>
-                     </select>
-                    <input type="text" id="name" class="col-5" />
-              </div>
-              <div class="form-group row mt-4">
-                    <label for="name" class="col-3 ms-3">Thuê dịch vụ</label>
-                     <select id="Bàn" class="col-2">
-                     <option>10%</option>
-                     <option>20%</option>
-                     <option>30%</option>
-                     </select>
-                    <input type="text" id="name" class="col-5" />
-              </div>
-              <div class="form-group row mt-4">
-                    <label for="name" class="col-3 ms-3 text-primary">Giảm giá</label>
-                     <select id="Bàn" class="col-2">
-                     <option>10%</option>
-                     <option>20%</option>
-                     <option>30%</option>
-                     </select>
-                    <input type="text" id="name" class="col-5" />
-              </div>
-                <div class="form-group row mt-4">
-                    <label for="name" class="col-3 ms-3 text-danger">Tổng cộng:</label>
-                    <input type="text" id="name" class="col-7" />
-              </div>
-              <div class="row mt-4 d-flex justify-content-center">
-               <button type="button" class="btn btn-primary col-3 me-3" style="background-color: #FFA800;" data-bs-toggle="modal" data-bs-target="#printConfirmOrder">
-                 <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M5 2.5H25V8.75H29.375V22.5H23.75V27.5H6.25V22.5H0.625V8.75H5V2.5ZM7.5 8.75H22.5V5H7.5V8.75ZM3.125 11.25V20H6.25V17.5H23.75V20H26.875V11.25H3.125ZM21.25 20H8.75V25H21.25V20ZM21.25 13.12H23.755V15.625H21.25V13.12Z" fill="white"/>
-</svg>
-                 <p class="m-0">In Order</p>
-               </button>
-               <button type="button" class="btn btn-primary d-flex flex-column align-items-center justify-content-center col-3 ms-3" style="background-color: #586EFF;" data-bs-toggle="modal" data-bs-target="#printConfirmBill">
-                <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M22.9413 17.5H23.75C24.9288 17.5 25.5175 17.5 25.8838 17.1337C26.25 16.7675 26.25 16.1788 26.25 15V13.75C26.25 11.3925 26.25 10.215 25.5175 9.4825C24.785 8.75 23.6075 8.75 21.25 8.75H8.75C6.3925 8.75 5.215 8.75 4.4825 9.4825C3.75 10.215 3.75 11.3925 3.75 13.75V16.25C3.75 16.8387 3.75 17.1338 3.9325 17.3175C4.11625 17.5 4.4125 17.5 5 17.5H7.05875" stroke="white" stroke-width="2"/>
-<path d="M22.5 8.75V7.35C22.5 6.09 22.5 5.46 22.255 4.97875C22.0392 4.55514 21.6949 4.21076 21.2713 3.995C20.79 3.75 20.16 3.75 18.9 3.75H11.1C9.84 3.75 9.21 3.75 8.72875 3.995C8.30514 4.21076 7.96076 4.55514 7.745 4.97875C7.5 5.46 7.5 6.09 7.5 7.35V8.75M7.5 25.3825V15C7.5 13.8212 7.5 13.2325 7.86625 12.8663C8.2325 12.5 8.82125 12.5 10 12.5H20C21.1788 12.5 21.7675 12.5 22.1338 12.8663C22.5 13.2325 22.5 13.8212 22.5 15V25.3825C22.5 25.7787 22.5 25.9763 22.37 26.07C22.24 26.1638 22.0525 26.1013 21.6775 25.9763L18.9475 25.0662C18.85 25.0337 18.8013 25.0163 18.75 25.0163C18.6987 25.0163 18.65 25.0337 18.5525 25.0662L15.1975 26.1838C15.1 26.2163 15.0513 26.2337 15 26.2337C14.9487 26.2337 14.9 26.2163 14.8025 26.1838L11.4475 25.0662C11.35 25.0337 11.3013 25.0163 11.25 25.0163C11.1987 25.0163 11.15 25.0337 11.0525 25.0662L8.3225 25.9763C7.9475 26.1013 7.76 26.1638 7.63 26.07C7.5 25.9763 7.5 25.7787 7.5 25.3825Z" stroke="white" stroke-width="2"/>
-<path d="M12.5 17.5H16.25M12.5 21.25H18.125" stroke="white" stroke-width="2" stroke-linecap="round"/>
-</svg>
-                 <p class="m-0">In hóa đơn</p>
-               </button>
-              </div>
-                 <div class="row mt-4 d-flex justify-content-center">
-               <button type="button" class="btn btn-primary d-flex flex-column align-items-center justify-content-center col-3 me-3" style="background-color: #FF58E0;" data-bs-toggle="modal" data-bs-target="#splitBillModal">
-               <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M5 18.75C4.64584 18.75 4.34917 18.63 4.11 18.39C3.87084 18.15 3.75084 17.8533 3.75 17.5C3.74917 17.1467 3.86917 16.85 4.11 16.61C4.35084 16.37 4.6475 16.25 5 16.25H12.5C12.8542 16.25 13.1513 16.37 13.3913 16.61C13.6313 16.85 13.7508 17.1467 13.75 17.5C13.7492 17.8533 13.6292 18.1504 13.39 18.3913C13.1508 18.6321 12.8542 18.7517 12.5 18.75H5ZM5 23.75C4.64584 23.75 4.34917 23.63 4.11 23.39C3.87084 23.15 3.75084 22.8533 3.75 22.5C3.74917 22.1467 3.86917 21.85 4.11 21.61C4.35084 21.37 4.6475 21.25 5 21.25H12.5C12.8542 21.25 13.1513 21.37 13.3913 21.61C13.6313 21.85 13.7508 22.1467 13.75 22.5C13.7492 22.8533 13.6292 23.1504 13.39 23.3912C13.1508 23.6321 12.8542 23.7517 12.5 23.75H5ZM5 13.75C4.64584 13.75 4.34917 13.63 4.11 13.39C3.87084 13.15 3.75084 12.8533 3.75 12.5C3.74917 12.1467 3.86917 11.85 4.11 11.61C4.35084 11.37 4.6475 11.25 5 11.25H12.5C12.8542 11.25 13.1513 11.37 13.3913 11.61C13.6313 11.85 13.7508 12.1467 13.75 12.5C13.7492 12.8533 13.6292 13.1504 13.39 13.3913C13.1508 13.6321 12.8542 13.7517 12.5 13.75H5ZM5 8.75C4.64584 8.75 4.34917 8.63 4.11 8.39C3.87084 8.15 3.75084 7.85333 3.75 7.5C3.74917 7.14667 3.86917 6.85 4.11 6.61C4.35084 6.37 4.6475 6.25 5 6.25H12.5C12.8542 6.25 13.1513 6.37 13.3913 6.61C13.6313 6.85 13.7508 7.14667 13.75 7.5C13.7492 7.85333 13.6292 8.15042 13.39 8.39125C13.1508 8.63208 12.8542 8.75167 12.5 8.75H5ZM18.75 23.75C18.0625 23.75 17.4742 23.5054 16.985 23.0163C16.4958 22.5271 16.2508 21.9383 16.25 21.25V8.75C16.25 8.0625 16.495 7.47417 16.985 6.985C17.475 6.49583 18.0633 6.25083 18.75 6.25H23.75C24.4375 6.25 25.0263 6.495 25.5163 6.985C26.0063 7.475 26.2508 8.06333 26.25 8.75V21.25C26.25 21.9375 26.0054 22.5263 25.5163 23.0163C25.0271 23.5063 24.4383 23.7508 23.75 23.75H18.75Z" fill="white"/>
-</svg>
-
-                 <p class="m-0">Tách hóa đơn</p>
-               </button>
-               <button type="button" class="btn btn-primary d-flex flex-column align-items-center justify-content-center col-3 ms-3" style="background-color:#D7060A ;" data-bs-toggle="modal" data-bs-target="#printConfirmPay">
-             <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M28.125 6.09375H1.875C1.50204 6.09375 1.14435 6.24191 0.880631 6.50563C0.616908 6.76935 0.46875 7.12704 0.46875 7.5V22.5C0.46875 22.873 0.616908 23.2306 0.880631 23.4944C1.14435 23.7581 1.50204 23.9062 1.875 23.9062H28.125C28.498 23.9062 28.8556 23.7581 29.1194 23.4944C29.3831 23.2306 29.5312 22.873 29.5312 22.5V7.5C29.5312 7.12704 29.3831 6.76935 29.1194 6.50563C28.8556 6.24191 28.498 6.09375 28.125 6.09375ZM21.2355 21.0938H8.76445C8.4862 19.744 7.81859 18.5054 6.84411 17.5309C5.86963 16.5564 4.63099 15.8888 3.28125 15.6105V14.3895C4.63099 14.1112 5.86963 13.4436 6.84411 12.4691C7.81859 11.4946 8.4862 10.256 8.76445 8.90625H21.2355C21.5138 10.256 22.1814 11.4946 23.1559 12.4691C24.1304 13.4436 25.369 14.1112 26.7188 14.3895V15.6105C25.369 15.8888 24.1304 16.5564 23.1559 17.5309C22.1814 18.5054 21.5138 19.744 21.2355 21.0938ZM26.7188 11.4773C26.1265 11.2659 25.5887 10.9256 25.144 10.481C24.6994 10.0363 24.3591 9.49846 24.1477 8.90625H26.7188V11.4773ZM5.85234 8.90625C5.64093 9.49846 5.3006 10.0363 4.85596 10.481C4.41132 10.9256 3.87346 11.2659 3.28125 11.4773V8.90625H5.85234ZM3.28125 18.5227C3.87346 18.7341 4.41132 19.0744 4.85596 19.519C5.3006 19.9637 5.64093 20.5015 5.85234 21.0938H3.28125V18.5227ZM24.1477 21.0938C24.3591 20.5015 24.6994 19.9637 25.144 19.519C25.5887 19.0744 26.1265 18.7341 26.7188 18.5227V21.0938H24.1477ZM15 10.3125C14.0729 10.3125 13.1666 10.5874 12.3958 11.1025C11.6249 11.6176 11.0241 12.3496 10.6693 13.2062C10.3145 14.0627 10.2217 15.0052 10.4026 15.9145C10.5834 16.8238 11.0299 17.659 11.6854 18.3146C12.341 18.9701 13.1762 19.4166 14.0855 19.5974C14.9948 19.7783 15.9373 19.6855 16.7938 19.3307C17.6504 18.9759 18.3824 18.3751 18.8975 17.6042C19.4126 16.8334 19.6875 15.9271 19.6875 15C19.6875 13.7568 19.1936 12.5645 18.3146 11.6854C17.4355 10.8064 16.2432 10.3125 15 10.3125ZM15 16.875C14.6292 16.875 14.2666 16.765 13.9583 16.559C13.65 16.353 13.4096 16.0601 13.2677 15.7175C13.1258 15.3749 13.0887 14.9979 13.161 14.6342C13.2334 14.2705 13.412 13.9364 13.6742 13.6742C13.9364 13.412 14.2705 13.2334 14.6342 13.161C14.9979 13.0887 15.3749 13.1258 15.7175 13.2677C16.0601 13.4096 16.353 13.65 16.559 13.9583C16.765 14.2666 16.875 14.6292 16.875 15C16.875 15.4973 16.6775 15.9742 16.3258 16.3258C15.9742 16.6775 15.4973 16.875 15 16.875Z" fill="white"/>
-</svg>
-
-                 <p class="m-0">Thanh toán</p>
-               </button>
-              </div>
-               <div class="row mt-4 d-flex justify-content-center">
-                 <button type="button" class="btn btn-primary d-flex flex-column align-items-center justify-content-center col-7" style="background-color:#0BB783 ;">
-           <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M15 20C17.0887 20 18.75 18.3362 18.75 16.25C18.75 14.1637 17.0887 12.5 15 12.5C12.9112 12.5 11.25 14.1637 11.25 16.25C11.25 18.3362 12.9112 20 15 20Z" fill="white"/>
-<path d="M26.0212 13.9825C25.728 12.5425 25.1523 11.175 24.3275 9.95875C23.5195 8.76055 22.4882 7.72925 21.29 6.92125C20.0722 6.09934 18.7052 5.52393 17.2662 5.2275C16.5102 5.07392 15.7403 4.99852 14.9688 5.0025V2.5L10 6.25L14.9688 10V7.5025C15.5738 7.5 16.1788 7.5575 16.7625 7.6775C17.8809 7.90797 18.9434 8.35513 19.89 8.99375C20.8231 9.62268 21.6261 10.4257 22.255 11.3587C23.2315 12.8029 23.7522 14.5067 23.75 16.25C23.7509 17.42 23.5171 18.5782 23.0625 19.6562C22.8427 20.1761 22.5731 20.6734 22.2575 21.1413C21.9426 21.6076 21.5834 22.0426 21.185 22.44C19.9749 23.6476 18.4388 24.476 16.765 24.8237C15.601 25.0598 14.4015 25.0598 13.2375 24.8237C12.1186 24.5931 11.0557 24.1455 10.1087 23.5063C9.17682 22.8778 8.3747 22.0757 7.74625 21.1438C6.77097 19.6981 6.24994 17.9939 6.25 16.25H3.75C3.74981 18.4923 4.41972 20.6836 5.67375 22.5425C6.48365 23.7376 7.51365 24.7676 8.70875 25.5775C10.5658 26.8343 12.7576 27.5041 15 27.5C15.7616 27.5007 16.5214 27.4241 17.2675 27.2712C18.706 26.9747 20.0726 26.3993 21.29 25.5775C21.8873 25.1739 22.4445 24.7139 22.9538 24.2038C23.4644 23.6941 23.9249 23.1366 24.3287 22.5387C25.5847 20.6823 26.254 18.4914 26.25 16.25C26.2507 15.4884 26.1741 14.7286 26.0212 13.9825Z" fill="white"/>
-</svg>
-                 <p class="m-0" >Reset bàn</p>
-               </button>
-               </div>
-             </div>
             </div>
-       
+
+            <div class="col-lg-4 col-md-12">
+              <div class="content-card">
+                <h5 class="card-section-title">Tạo Order</h5>
+
+                <!-- START: MENU DANH MỤC DỌC -->
+                <h6 class="fw-bold">Menu</h6>
+                <!-- Thêm class scrollable-area để kế thừa style thanh cuộn -->
+                <div class="menu-list-wrapper scrollable-area">
+                  <ul class="list-group menu-category-list text-center">
+                    <li
+                      class="list-group-item list-group-item-action active"
+                      aria-current="true"
+                    >
+                      Sữa chua
+                    </li>
+                    <li class="list-group-item list-group-item-action">Trà</li>
+                    <li class="list-group-item list-group-item-action">
+                      Cà phê
+                    </li>
+                    <li class="list-group-item list-group-item-action">
+                      Đồ ăn vặt
+                    </li>
+                    <li class="list-group-item list-group-item-action">
+                      Đá xay
+                    </li>
+                    <li class="list-group-item list-group-item-action">
+                      Trà sữa
+                    </li>
+                    <li class="list-group-item list-group-item-action">
+                      Sinh tố
+                    </li>
+                    <li class="list-group-item list-group-item-action">Soda</li>
+                    <li class="list-group-item list-group-item-action">
+                      Nước ép
+                    </li>
+                  </ul>
+                </div>
+                <!-- END: MENU DANH MỤC DỌC -->
+
+                <div id="product-list-wrapper">
+                  <h6>Sản phẩm</h6>
+                  <div class="scrollable-area h-100 pe-2">
+                    <table class="table table-hover align-middle text-center">
+                      <thead>
+                        <tr>
+                          <th>Tên món</th>
+                          <th>Size</th>
+                          <th>Giá</th>
+                          <th>Chọn</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Sữa chua dâu</td>
+                          <td>L</td>
+                          <td>20.000</td>
+                          <td>
+                            <button class="btn btn-sm btn-outline-success">
+                              Thêm
+                            </button>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>Sữa chua dâu</td>
+                          <td>M</td>
+                          <td>18.000</td>
+                          <td>
+                            <button class="btn btn-sm btn-outline-success">
+                              Thêm
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div id="selected-products-wrapper" class="mt-3">
+                  <h6>Sản phẩm đã chọn</h6>
+                  <div class="scrollable-area h-100 pe-2">
+                    <table
+                      class="table table-selected-products align-middle text-center"
+                    >
+                      <thead>
+                        <tr>
+                          <th class="col-name">Tên món</th>
+                          <th class="col-quantity">SL</th>
+                          <th class="col-total">Tổng</th>
+                          <th class="col-delete">Hủy</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>Sữa chua dâu (L)</td>
+                          <td>
+                            <div class="input-group input-group-sm">
+                              <button
+                                class="btn btn-outline-secondary"
+                                type="button"
+                              >
+                                -
+                              </button>
+                              <input
+                                type="text"
+                                class="form-control text-center"
+                                value="1"
+                              />
+                              <button
+                                class="btn btn-outline-secondary"
+                                type="button"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </td>
+                          <td>20.000</td>
+                          <td>
+                            <button class="btn btn-sm btn-outline-danger">
+                              <i class="bi bi-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div class="row mt-auto pt-3 gx-2">
+                  <div class="col-6">
+                    <button
+                      class="btn btn-secondary w-100 btn-action"
+                      data-bs-toggle="modal"
+                      data-bs-target="#mergeOrderModal"
+                    >
+                      Gộp order
+                    </button>
+                  </div>
+                  <div class="col-6">
+                    <button
+                      class="btn btn-warning w-100 text-white btn-action"
+                      data-bs-toggle="modal"
+                      data-bs-target="#confirmModal"
+                    >
+                      Chuyển HĐ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+              <div class="content-card">
+                <h5 class="card-section-title">Hóa đơn - Mã #12345</h5>
+
+                <div class="scrollable-area h-100 pe-2">
+                  <table class="table align-middle">
+                    <thead>
+                      <tr>
+                        <th>Tên món</th>
+                        <th>SL</th>
+                        <th class="text-end">Tổng</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Sữa chua dâu (L)</td>
+                        <td>1</td>
+                        <td class="text-end">20.000</td>
+                      </tr>
+                      <tr>
+                        <td>Trà đào cam sả (M)</td>
+                        <td>2</td>
+                        <td class="text-end">60.000</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div class="mt-3">
+                  <div class="row g-3">
+                    <div class="col-12">
+                      <input
+                        type="text"
+                        class="form-control"
+                        placeholder="Họ và tên khách hàng"
+                      />
+                    </div>
+                    <div class="col-4">
+                      <select class="form-select">
+                        <option>Bàn 01</option>
+                      </select>
+                    </div>
+                    <div class="col-4">
+                      <input
+                        type="date"
+                        class="form-control"
+                        value="2025-10-28"
+                      />
+                    </div>
+                    <div class="col-4">
+                      <input type="time" class="form-control" value="22:30" />
+                    </div>
+                  </div>
+                  <hr />
+                  <div class="invoice-summary">
+                    <div class="d-flex justify-content-between mb-2">
+                      <span>Thành tiền:</span
+                      ><span class="fw-bold">80.000đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                      <span>Giảm giá:</span
+                      ><span class="fw-bold text-success">0đ</span>
+                    </div>
+                    <div
+                      class="d-flex justify-content-between fw-bold h5 text-danger mt-3"
+                    >
+                      <span>TỔNG CỘNG:</span><span>80.000đ</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="row mt-auto pt-3 g-2">
+                  <div class="col-6">
+                    <button
+                      class="btn btn-cyan w-100 btn-action"
+                      data-bs-toggle="modal"
+                      data-bs-target="#printConfirmOrder"
+                    >
+                      In Order
+                    </button>
+                  </div>
+                  <div class="col-6">
+                    <button
+                      class="btn btn-primary w-100 btn-action"
+                      data-bs-toggle="modal"
+                      data-bs-target="#printConfirmBill"
+                    >
+                      In Hóa Đơn
+                    </button>
+                  </div>
+                  <div class="col-6">
+                    <button
+                      class="btn btn-dark-gray w-100 btn-action"
+                      data-bs-toggle="modal"
+                      data-bs-target="#splitBillModal"
+                    >
+                      Tách HĐ
+                    </button>
+                  </div>
+                  <div class="col-6">
+                    <button
+                      class="btn btn-success w-100 btn-action"
+                      data-bs-toggle="modal"
+                      data-bs-target="#printConfirmPay"
+                    >
+                      Thanh Toán
+                    </button>
+                  </div>
+                  <div class="col-12">
+                    <button class="btn btn-reset w-100 mt-2 btn-action">
+                      Reset Bàn
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  <!--====================================================================================================-->
 
-  <!--=========================================Chuyển hóa đơn==========================================================-->
-  <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="confirmModalLabel">Chuyển hóa đơn</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body">
-        Hãy chắc chắn các món trong danh sách orders đã đúng với yêu cầu của khách hàng.
-      </div>
-      <div class="modal-footer row d-flex justify-content-center">
-        <button type="button" class="btn btn-secondary col-5" data-bs-dismiss="modal">Hủy</button>
-        <button type="submit" class="btn btn-success col-5">Xác nhận</button>
-      </div>
-    </div>
-  </div>
-  </div>
-
-  <!--==========================================In Order==========================================================-->
-  <div class="modal fade" id="printConfirmOrder" tabindex="-1" aria-labelledby="printConfirmLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title text-center w-100" id="printConfirmLabel">Xác nhận in Order</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body text-center w-100">
-        Xác nhận in order ?
-      </div>
-
-      <div class="modal-footer row d-flex justify-content-center">
-        <button type="button" class="btn btn-secondary col-5" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-success col-5" onclick="confirmPrint()">Xác nhận</button>
-      </div>
-
-    </div>
-  </div>
-  </div>
-
-  <!--===========================================Thanh toán 1=========================================================-->
-  <div class="modal fade" id="printConfirmPay" tabindex="-1" aria-labelledby="printConfirmLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title text-center w-100" id="printConfirmLabel">Thanh toán</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body text-center w-100">
-        Hình thức thanh toán
-      </div>
-
-      <div class="modal-footer row d-flex justify-content-center">
-        <button type="button" class="btn btn-outline-warning col-5 text-black" data-bs-dismiss="modal">Tiền mặt</button>
-        <button type="button" class="btn btn-primary col-5 " onclick="confirmPrint()" data-bs-toggle="modal" data-bs-target="#transferModal">Chuyển khoản</button>
-      </div>
-
-    </div>
-  </div>
-  </div> 
-
-  <!--============================================In hoá đơn========================================================-->
-  <div class="modal fade" id="printConfirmBill" tabindex="-1" aria-labelledby="printConfirmLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title text-center w-100" id="printConfirmLabel">Xác nhận in hóa đơn</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body text-center w-100">
-        Xác nhận in hóa đơn ?
-      </div>
-
-      <div class="modal-footer row d-flex justify-content-center">
-        <button type="button" class="btn btn-outline-warning col-5 text-black" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-primary col-5 " onclick="confirmPrint()">Xác nhận</button>
-      </div>
-
-    </div>
-  </div>
-  </div>
-
-  <!--==============================================Thanh toán 2======================================================-->
-  <div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content text-center">
-      <div class="modal-header">
-        <h5 class="modal-title" id="transferModalLabel">Chuyển khoản</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body">
-        <!-- QR Code -->
-        <img src="../../public/images/Files/MaQR.png" alt="QR Code" class="img-fluid mb-3" style="max-width: 200px;">
-
-        <!-- Amount -->
-        <p class="fw-bold">Số tiền: <span class="text-danger">XXXXXXXXXXX</span></p>
-      </div>
-      <div class="modal-footer justify-content-center 98px">
-        <button type="button" class="btn btn-outline-light col-5 text-secondary" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-success col-5">Đưa ra màn hình</button>
-      </div>
-    </div>
-  </div>
-  </div>
-
-  <!--=============================================Tách hóa đơn=======================================================-->
-  <div class="modal fade" id="splitBillModal" tabindex="-1" aria-labelledby="splitBillLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="splitBillLabel">Tách hóa đơn</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body">
-        <table class="table table-bordered text-center">
-          <thead class="table-light">
-            <tr>
-              <th>Tên món</th>
-              <th>Size</th>
-              <th>Giá</th>
-              <th>SL</th>
-              <th>Tổng tiền</th>
-              <th>Chọn</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Cà phê sữa đá</td>
-              <td>L</td>
-              <td>20000</td>
-              <td>1</td>
-              <td>20000</td>
-              <td><input type="checkbox" /></td>
-            </tr>
-            <tr>
-              <td>Cà phê sữa đá</td>
-              <td>L</td>
-              <td>20000</td>
-              <td>5</td>
-              <td>100000</td>
-              <td><input type="checkbox" /></td>
-            </tr>
-            <tr>
-              <td>Cà phê sữa đá</td>
-              <td>L</td>
-              <td>20000</td>
-              <td>2</td>
-              <td>40000</td>
-              <td><input type="checkbox" /></td>
-            </tr>
-            <tr>
-              <td>Cà phê sữa đá</td>
-              <td>L</td>
-              <td>20000</td>
-              <td>3</td>
-              <td>60000</td>
-              <td><input type="checkbox" /></td>
-            </tr>
-            <tr>
-              <td>Cà phê sữa đá</td>
-              <td>L</td>
-              <td>20000</td>
-              <td>4</td>
-              <td>80000</td>
-              <td><input type="checkbox" /></td>
-            </tr>
-            <tr>
-              <td>Cà phê sữa đá</td>
-              <td>L</td>
-              <td>20000</td>
-              <td>5</td>
-              <td>100000</td>
-              <td><input type="checkbox" /></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="modal-footer justify-content-center row">
-        <button type="button" class="btn btn-secondary col-5" data-bs-dismiss="modal">Hủy</button>
-        <button type="button" class="btn btn-success col-5">Xác nhận</button>
-      </div>
-    </div>
-  </div>
-  </div>
-
-  <!--============================================= Gộp hóa đơn=======================================================-->
-  <div class="modal fade modal-sm" id="mergeOrderModal" tabindex="-1" aria-labelledby="mergeOrderLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="mergeOrderLabel">Gộp order</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-      </div>
-      <div class="modal-body">
-        <form id="mergeOrderForm">
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" value="Order 01" id="order01">
-            <label class="form-check-label" for="order01">Order 01</label>
+    <div
+      class="modal fade"
+      id="confirmModal"
+      tabindex="-1"
+      aria-labelledby="confirmModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="confirmModalLabel">Chuyển hóa đơn</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" value="Order 02" id="order02">
-            <label class="form-check-label" for="order02">Order 02</label>
+          <div class="modal-body">
+            Hãy chắc chắn các món trong danh sách orders đã đúng với yêu cầu của
+            khách hàng.
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" value="Order 03" id="order03">
-            <label class="form-check-label" for="order03">Order 03</label>
+          <div class="modal-footer row d-flex justify-content-center">
+            <button
+              type="button"
+              class="btn btn-secondary col-5"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button type="submit" class="btn btn-success col-5">
+              Xác nhận
+            </button>
           </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" value="Order 04" id="order04">
-            <label class="form-check-label" for="order04">Order 04</label>
-          </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" value="Order 05" id="order05">
-            <label class="form-check-label" for="order05">Order 05</label>
-          </div>
-          <div class="form-check mb-2">
-            <input class="form-check-input" type="checkbox" value="Order 06" id="order06">
-            <label class="form-check-label" for="order06">Order 06</label>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer justify-content-center row">
-        <button type="button" class="btn btn-success col-10" onclick="confirmMerge()">Xác nhận</button>
-        <button type="button" class="btn btn-secondary col-10" data-bs-dismiss="modal">Hủy</button>
+        </div>
       </div>
     </div>
-  </div>
-  </div>
 
-  <!--====================================================================================================-->
+    <div
+      class="modal fade"
+      id="printConfirmOrder"
+      tabindex="-1"
+      aria-labelledby="printConfirmLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-center w-100" id="printConfirmLabel">
+              Xác nhận in Order
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
+          </div>
+          <div class="modal-body text-center w-100">Xác nhận in order ?</div>
+
+          <div class="modal-footer row d-flex justify-content-center">
+            <button
+              type="button"
+              class="btn btn-secondary col-5"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              class="btn btn-success col-5"
+              onclick="confirmPrint()"
+            >
+              Xác nhận
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="printConfirmPay"
+      tabindex="-1"
+      aria-labelledby="printConfirmLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-center w-100" id="printConfirmLabel">
+              Thanh toán
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
+          </div>
+          <div class="modal-body text-center w-100">Hình thức thanh toán</div>
+
+          <div class="modal-footer row d-flex justify-content-center">
+            <button
+              type="button"
+              class="btn btn-outline-warning col-5 text-black"
+              data-bs-dismiss="modal"
+            >
+              Tiền mặt
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary col-5"
+              onclick="confirmPrint()"
+              data-bs-toggle="modal"
+              data-bs-target="#transferModal"
+            >
+              Chuyển khoản
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="printConfirmBill"
+      tabindex="-1"
+      aria-labelledby="printConfirmLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title text-center w-100" id="printConfirmLabel">
+              Xác nhận in hóa đơn
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
+          </div>
+          <div class="modal-body text-center w-100">Xác nhận in hóa đơn ?</div>
+
+          <div class="modal-footer row d-flex justify-content-center">
+            <button
+              type="button"
+              class="btn btn-outline-warning col-5 text-black"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary col-5"
+              onclick="confirmPrint()"
+            >
+              Xác nhận
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="transferModal"
+      tabindex="-1"
+      aria-labelledby="transferModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content text-center">
+          <div class="modal-header">
+            <h5 class="modal-title" id="transferModalLabel">Chuyển khoản</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <img
+              src="https://api.vietqr.io/image/970422-1234567890123-2J12kL.png?accountName=Nguyen%20Van%20A&amount=80000"
+              alt="QR Code"
+              class="img-fluid mb-3"
+              style="max-width: 200px"
+            />
+            <p class="fw-bold">
+              Số tiền: <span class="text-danger">80.000đ</span>
+            </p>
+          </div>
+          <div class="modal-footer justify-content-center 98px">
+            <button
+              type="button"
+              class="btn btn-outline-light col-5 text-secondary"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button type="button" class="btn btn-success col-5">
+              Đã thanh toán
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade"
+      id="splitBillModal"
+      tabindex="-1"
+      aria-labelledby="splitBillLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="splitBillLabel">Tách hóa đơn</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <table class="table table-bordered text-center">
+              <thead class="table-light">
+                <tr>
+                  <th>Tên món</th>
+                  <th>Size</th>
+                  <th>Giá</th>
+                  <th>SL</th>
+                  <th>Tổng tiền</th>
+                  <th>Chọn</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Cà phê sữa đá</td>
+                  <td>L</td>
+                  <td>20000</td>
+                  <td>1</td>
+                  <td>20000</td>
+                  <td><input type="checkbox" class="form-check-input" /></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer justify-content-center row">
+            <button
+              type="button"
+              class="btn btn-secondary col-5"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+            <button type="button" class="btn btn-success col-5">
+              Xác nhận
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      class="modal fade modal-sm"
+      id="mergeOrderModal"
+      tabindex="-1"
+      aria-labelledby="mergeOrderLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="mergeOrderLabel">Gộp order</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Đóng"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="mergeOrderForm">
+              <div class="form-check mb-2">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  value="Order 01"
+                  id="order01"
+                />
+                <label class="form-check-label" for="order01">Order 01</label>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer justify-content-center row">
+            <button
+              type="button"
+              class="btn btn-success col-10"
+              onclick="confirmMerge()"
+            >
+              Xác nhận
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary col-10"
+              data-bs-dismiss="modal"
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>

@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trang Chủ - Bảng Điều Khiển</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
+    <style>
+      body {
+        font-family: "Be Vietnam Pro", sans-serif;
+        background-color: #f0f2f5;
+      }
+
+      .sidebar {
+        background-color: #ffffff;
+        border-right: 1px solid #dee2e6;
+        height: 100vh;
+        position: sticky;
+        top: 0;
+      }
+
+      .sidebar .nav-link {
+        color: #5a5a5a;
+        transition: all 0.3s ease;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+        padding: 0.8rem 1rem;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        background-color: #0bb783;
+        color: #ffffff;
+      }
+
+      .sidebar .nav-link:hover .nav-icon path,
+      .sidebar .nav-link.active .nav-icon path {
+        fill: #ffffff;
+        stroke: #ffffff;
+      }
+
+      .sidebar .nav-link:hover .cart-icon path,
+      .sidebar .nav-link.active .cart-icon path {
+        stroke: #ffffff;
+      }
+
+      .sidebar .nav-item svg {
+        transition: all 0.3s ease;
+      }
+
+      .main-content {
+        background-color: #f0f2f5;
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      .header-bar {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 1rem 2rem;
+        margin-bottom: 2rem;
+      }
+
+      .user-profile img {
+        border: 2px solid #0bb783;
+      }
+
+      .content-card {
+        background-color: #ffffff;
+        border-radius: 12px;
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        padding: 1.5rem;
+        height: 100%;
+      }
+
+      .stat-card {
+        border-left: 5px solid;
+        transition: all 0.3s ease;
+      }
+      .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-card.border-primary {
+        border-color: #0d6efd;
+      }
+      .stat-card.border-success {
+        border-color: #198754;
+      }
+      .stat-card.border-info {
+        border-color: #0dcaf0;
+      }
+      .stat-card.border-warning {
+        border-color: #ffc107;
+      }
+
+      .stat-card .display-4 {
+        font-weight: 700;
+      }
+
+      .stat-card i {
+        font-size: 3rem;
+        opacity: 0.3;
+      }
+
+      .chart-container {
+        position: relative;
+        height: 350px;
+      }
+
+      .table > :not(caption) > * > * {
+        padding: 0.8rem 0.8rem;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-xl-2 px-0 sidebar d-none d-xl-block">
+          <nav class="navbar mt-4 d-flex flex-column align-items-stretch">
+            <div
+              class="nav-item d-flex align-items-center justify-content-center mb-4"
+            >
+              <svg
+                width="40"
+                height="40"
+                viewBox="0 0 56 56"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect width="56" height="56" rx="8" fill="#0BB783" />
+                <path
+                  d="M22.3743 17.6274C21.2422 18.7805 21.2422 20.6464 22.3952 21.7994L24.911 24.3152C27.28 26.6842 27.28 30.5418 24.911 32.9108L20.2988 28.2985C19.1143 27.114 18.5168 25.5521 18.5168 24.0007C18.5168 22.4493 19.1143 20.8875 20.2988 19.7029L22.3428 17.6589C22.3533 17.6484 22.3638 17.6379 22.3743 17.6274Z"
+                  fill="#0BB783"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176"
+                  fill="#0BB783"
+                />
+                <path
+                  d="M24.3868 23.7899L22.3951 21.7983C21.2421 20.6452 21.2316 18.7898 22.3742 17.6263C23.5063 16.5151 25.3092 16.5361 26.4309 17.6577C26.9969 18.2238 27.2799 18.968 27.2799 19.7018C27.2799 20.4356 26.9969 21.1798 26.4309 21.7459L25.9591 22.2176"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M34.2715 38.2246C35.4036 37.0716 35.4036 35.2057 34.2505 34.0526L31.7348 31.5368C29.3657 29.1678 29.3657 25.3103 31.7348 22.9413L36.347 27.5535C37.5315 28.738 38.129 30.2999 38.129 31.8513C38.129 33.4027 37.5315 34.9646 36.347 36.1491L34.3029 38.1932C34.282 38.2141 34.2715 38.2246 34.2715 38.2246Z"
+                  fill="#0BB783"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+                <path
+                  d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332"
+                  fill="#0BB783"
+                />
+                <path
+                  d="M32.2479 32.0713L34.2396 34.0629C35.3926 35.216 35.4031 37.0714 34.2606 38.2349C33.1285 39.3461 31.3255 39.3251 30.2039 38.2035C29.6378 37.6374 29.3548 36.8932 29.3548 36.1594C29.3548 35.4257 29.6378 34.6814 30.2039 34.1154L30.686 33.6332"
+                  stroke="white"
+                  stroke-width="2"
+                  stroke-miterlimit="10"
+                />
+              </svg>
+              <a class="navbar-brand ms-2 fw-bold fs-4" href="#">LOGO</a>
+            </div>
+
+            <ul class="navbar-nav flex-column w-100 px-3">
+              <li class="nav-item">
+                <a
+                  class="nav-link active d-flex align-items-center"
+                  href="index.html"
+                >
+                  <i class="bi bi-house-door fs-5"></i>
+                  <span class="ms-3 fw-semibold">Trang chủ</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="BanHang.html"
+                >
+                  <i class="bi bi-cart3 fs-5"></i>
+                  <span class="ms-3 fw-semibold">Bán hàng</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link d-flex align-items-center" href="#">
+                  <i class="bi bi-bar-chart-line fs-5"></i>
+                  <span class="ms-3 fw-semibold">Thống kê</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="SanPham.html"
+                >
+                  <i class="bi bi-bag fs-5"></i>
+                  <span class="ms-3 fw-semibold">Sản phẩm | Menu</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="HoaDon.html"
+                >
+                  <i class="bi bi-receipt fs-5"></i>
+                  <span class="ms-3 fw-semibold">Hóa đơn</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="NhanVien.html"
+                >
+                  <i class="bi bi-people fs-5"></i>
+                  <span class="ms-3 fw-semibold">Nhân viên</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="KhachHang.html"
+                >
+                  <i class="bi bi-person fs-5"></i>
+                  <span class="ms-3 fw-semibold">Khách hàng</span>
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="KhuyenMai.html"
+                >
+                  <i class="bi bi-tag fs-5"></i>
+                  <span class="ms-3 fw-semibold">Khuyến mãi</span>
+                </a>
+              </li>
+              <li class="nav-item mt-4">
+                <a
+                  class="nav-link d-flex align-items-center"
+                  href="DangNhap.html"
+                >
+                  <i class="bi bi-box-arrow-right fs-5"></i>
+                  <span class="ms-3 fw-semibold">Đăng xuất</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="col-xl-10 col-12 main-content">
+          <div
+            class="header-bar d-flex justify-content-between align-items-center"
+          >
+            <h1 class="h3 mb-0">Trang chủ</h1>
+            <div class="d-flex align-items-center user-profile">
+              <img
+                class="rounded-circle"
+                src="https://i.pravatar.cc/60"
+                alt="Avatar"
+                style="width: 60px; height: 60px"
+              />
+              <div class="ms-3">
+                <p class="fw-bold mb-0">Tên nhân viên</p>
+                <p class="text-muted mb-0" style="font-size: 0.9rem">Chức vụ</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4 mb-4">
+            <div class="col-xl-3 col-md-6">
+              <div class="card content-card stat-card border-primary">
+                <div
+                  class="card-body d-flex justify-content-between align-items-center"
+                >
+                  <div>
+                    <h6 class="text-muted text-uppercase">Doanh thu hôm nay</h6>
+                    <h2 class="display-6 fw-bold">8.500.000đ</h2>
+                  </div>
+                  <i class="bi bi-cash-coin"></i>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+              <div class="card content-card stat-card border-success">
+                <div
+                  class="card-body d-flex justify-content-between align-items-center"
+                >
+                  <div>
+                    <h6 class="text-muted text-uppercase">Số đơn hàng</h6>
+                    <h2 class="display-6 fw-bold">125</h2>
+                  </div>
+                  <i class="bi bi-receipt"></i>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+              <div class="card content-card stat-card border-info">
+                <div
+                  class="card-body d-flex justify-content-between align-items-center"
+                >
+                  <div>
+                    <h6 class="text-muted text-uppercase">Khách hàng mới</h6>
+                    <h2 class="display-6 fw-bold">15</h2>
+                  </div>
+                  <i class="bi bi-person-plus"></i>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-3 col-md-6">
+              <div class="card content-card stat-card border-warning">
+                <div
+                  class="card-body d-flex justify-content-between align-items-center"
+                >
+                  <div>
+                    <h6 class="text-muted text-uppercase">Món bán chạy</h6>
+                    <h2 class="display-6 fw-bold">Trà Đào</h2>
+                  </div>
+                  <i class="bi bi-star"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <div class="col-xl-7">
+              <div class="card content-card">
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title fw-bold">Doanh Thu 7 Ngày Gần Nhất</h5>
+                  <div class="chart-container mt-3">
+                    <img
+                      src="https://i.imgur.com/s2hm2I3.png"
+                      style="width: 100%; height: 100%; object-fit: contain"
+                      alt="Biểu đồ doanh thu"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="col-xl-5">
+              <div class="card content-card">
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title fw-bold">Đơn Hàng Gần Đây</h5>
+                  <div class="table-responsive mt-3">
+                    <table class="table table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã Đơn</th>
+                          <th>Khách Hàng</th>
+                          <th>Tổng Tiền</th>
+                          <th>Trạng Thái</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td>#125</td>
+                          <td>Nguyễn Văn A</td>
+                          <td>180.000đ</td>
+                          <td><span class="badge bg-success">Đã giao</span></td>
+                        </tr>
+                        <tr>
+                          <td>#124</td>
+                          <td>Trần Thị B</td>
+                          <td>250.000đ</td>
+                          <td><span class="badge bg-success">Đã giao</span></td>
+                        </tr>
+                        <tr>
+                          <td>#123</td>
+                          <td>Lê Văn C</td>
+                          <td>95.000đ</td>
+                          <td>
+                            <span class="badge bg-warning text-dark"
+                              >Chưa giao</span
+                            >
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>#122</td>
+                          <td>Phạm Thị D</td>
+                          <td>320.000đ</td>
+                          <td><span class="badge bg-success">Đã giao</span></td>
+                        </tr>
+                        <tr>
+                          <td>#121</td>
+                          <td>Võ Văn E</td>
+                          <td>150.000đ</td>
+                          <td><span class="badge bg-danger">Đã hủy</span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
