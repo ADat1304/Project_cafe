@@ -1,65 +1,39 @@
 package com.example.demo_database.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
-
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String id;
+    @Column(length = 36, nullable = false, updatable = false)
+    String id;
 
+    @Column(nullable = false, unique = true, length = 64)
+    String username;
 
-    @Column(nullable = false, length = 100)
-    private String username;
+    @Column(nullable = false, length = 255)
+    String password;
 
-    @Column(nullable = false)
-    private String password;
+    @Column(length = 255)
+    String fullname;
 
-    @Column(name = "fullname")   // cột DB là 'fullname'
-    private String fullName;     // property Java là 'fullName'
-
-    @Column(length = 50)
-    private String role;
-
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getFullname() {
-        return fullName;
-    }
-
-    public void setFullname(String fullname) {
-        this.fullName = fullname;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id")
+    )
+    @Column(name = "role", length = 32, nullable = false)
+    Set<String> roles = new HashSet<>();
 }

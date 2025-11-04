@@ -12,10 +12,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
@@ -23,25 +26,26 @@ import java.util.List;
 public class UserController {
      UserService userService;
 
-//    @PostMapping
-//    ApiResponse<User> createUser(@RequestBody @Valid UserCreationRequest request){
-//        ApiResponse<User> apiResponse = new ApiResponse<>();
-//
-//        apiResponse.setResult(userService.creatRequest(request));
-//        return apiResponse;
-//    }
+
 @PostMapping
 ApiResponse<UserReponse> createUser(@RequestBody @Valid UserCreationRequest request){
-    ApiResponse<UserReponse> apiResponse = new ApiResponse<>();
-
-    apiResponse.setResult(userService.createUser(request));
-
-    return apiResponse;
+    return ApiResponse.<UserReponse>builder()
+            .result(userService.createUser(request))
+            .build();
 }
 
     @GetMapping
-    List<User> getUsers(){
-        return userService.getUsers();
+    ApiResponse<List<UserReponse>> getUsers(){
+
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        log.info("user name: {}", authentication.getName());
+        authentication.getAuthorities().forEach(
+                grantedAuthority -> log.info(grantedAuthority.getAuthority()));
+
+        return ApiResponse.<List<UserReponse>>builder()
+                .result(userService.getUsers())
+                .build();
     }
 
     @GetMapping("/{userId}")

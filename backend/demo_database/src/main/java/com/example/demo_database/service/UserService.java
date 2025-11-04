@@ -1,5 +1,6 @@
 package com.example.demo_database.service;
 
+import com.example.demo_database.User.Roles;
 import com.example.demo_database.dto.request.UserCreationRequest;
 import com.example.demo_database.dto.request.UserUpdateRequest;
 import com.example.demo_database.dto.response.UserReponse;
@@ -11,11 +12,10 @@ import com.example.demo_database.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -23,7 +23,7 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserService {
     UserRepository userRepository ;
-
+    PasswordEncoder passwordEncoder;
     UserMapper userMapper;
 
 //    public User creatRequest(UserCreationRequest request){
@@ -44,13 +44,17 @@ public UserReponse createUser(UserCreationRequest request){
         throw new AppException(ErrorCode.USER_EXISTED);
 
     User user = userMapper.toUser(request);
-    PasswordEncoder passwordEncoder= new BCryptPasswordEncoder(10);
     user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+    HashSet<String> roles= new HashSet<>();
+    roles.add(Roles.USER.name());
+    user.setRoles(roles);
     return userMapper.toUserReponse(userRepository.save(user));
 }
 
-    public List<User> getUsers(){
-        return userRepository.findAll();
+    public List<UserReponse> getUsers(){
+        return userRepository.findAll().stream()
+                .map(userMapper::toUserReponse).toList();
     }
 
     public UserReponse getUserId(String userId){
