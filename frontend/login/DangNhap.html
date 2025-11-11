@@ -230,7 +230,7 @@
         <h2 class="mb-4">CHÚC BẠN CÓ MỘT NGÀY LÀM VIỆC TỐT LÀNH!</h2>
         <p>ĐĂNG NHẬP ĐỂ TIẾP TỤC</p>
 
-        <form class="w-100 px-lg-5">
+        <form class="w-100 px-lg-5" id="loginForm" novalidate>
           <div class="mb-4">
             <div class="input-group">
               <span class="input-group-text"
@@ -246,6 +246,7 @@
               />
             </div>
           </div>
+
           <div class="mb-4">
             <div class="input-group input-group-password">
               <span class="input-group-text"
@@ -264,7 +265,12 @@
               </button>
             </div>
           </div>
-          <button type="submit" class="btn btn-login">Đăng nhập</button>
+
+          <button type="submit" class="btn btn-login" id="loginButton">
+            Đăng nhập
+          </button>
+          <div id="loginAlert" class="alert d-none mt-3" role="alert"></div>
+
           <div class="forgot-password">
             <a
               href="#"
@@ -339,18 +345,89 @@
     </div>
 
     <script>
-      // JavaScript cho chức năng ẩn/hiện mật khẩu
-      const togglePassword = document.getElementById("togglePassword");
-      const password = document.getElementById("password");
+      document.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("loginForm");
+        const usernameInput = document.getElementById("username");
+        const passwordInput = document.getElementById("password");
+        const togglePasswordButton = document.getElementById("togglePassword");
+        const loginButton = document.getElementById("loginButton");
+        const loginAlert = document.getElementById("loginAlert");
 
-      togglePassword.addEventListener("click", function () {
-        // Toggle the type attribute
-        const type =
-          password.getAttribute("type") === "password" ? "text" : "password";
-        password.setAttribute("type", type);
+        const API_URL = "http://localhost:8080/api/auth/token";
 
-        // Toggle the text
-        this.textContent = type === "password" ? "SHOW" : "HIDE";
+        const showAlert = (message, type = "danger") => {
+          loginAlert.textContent = message;
+          loginAlert.className = `alert alert-${type} mt-3`;
+        };
+
+        const hideAlert = () => {
+          loginAlert.textContent = "";
+          loginAlert.className = "alert d-none mt-3";
+        };
+
+        togglePasswordButton.addEventListener("click", () => {
+          const isPassword = passwordInput.getAttribute("type") === "password";
+          passwordInput.setAttribute("type", isPassword ? "text" : "password");
+          togglePasswordButton.textContent = isPassword ? "HIDE" : "SHOW";
+          console.log("clicked");
+        });
+
+        form.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          hideAlert();
+
+          const username = usernameInput.value.trim();
+          const password = passwordInput.value;
+
+          if (!username || !password) {
+            showAlert("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu.");
+            return;
+          }
+
+          loginButton.disabled = true;
+          const originalText = loginButton.textContent;
+          loginButton.textContent = "Đang đăng nhập...";
+
+          try {
+            const response = await fetch(API_URL, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                username,
+                password,
+              }),
+            });
+
+            if (!response.ok) {
+              throw new Error("Không thể kết nối tới máy chủ.");
+            }
+
+            const data = await response.json();
+
+            if (
+              data.code === 0 &&
+              data.result?.authenticated &&
+              data.result?.token
+            ) {
+              localStorage.setItem("authToken", data.result.token);
+              showAlert("Đăng nhập thành công!", "success");
+              form.reset();
+              togglePasswordButton.textContent = "SHOW";
+              passwordInput.setAttribute("type", "password");
+            } else {
+              const errorMessage =
+                data.message || "Tên đăng nhập hoặc mật khẩu không chính xác.";
+              throw new Error(errorMessage);
+            }
+          } catch (error) {
+            showAlert(`Đăng nhập thất bại: ${error.message}`);
+          } finally {
+            loginButton.disabled = false;
+            loginButton.textContent = originalText;
+          }
+        });
       });
     </script>
   </body>
