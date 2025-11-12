@@ -1,10 +1,10 @@
 package com.example.demo_database.Configuation;
 
-import com.example.demo_database.User.Roles;
-import com.example.demo_database.entity.User;
-import com.example.demo_database.repository.UserRepository;
+
+import com.example.demo_database.feature.user.Role.Roles;
+import com.example.demo_database.feature.user.entity.Users;
+import com.example.demo_database.feature.user.repository.UserRepository;
 import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.HashSet;
-import java.util.Set;
 
 
 @Configuration
@@ -30,7 +29,7 @@ public class ApplicationInitConfig {
                 var roles= new HashSet<String>();
                 roles.add(Roles.ADMIN.name());
 
-                User user = User.builder()
+                Users user = Users.builder()
                         .username("admin")
                         .password(passwordEncoder.encode("admin"))
                         .roles(roles)
