@@ -6,11 +6,12 @@ import lombok.experimental.FieldDefaults;
 
 @Entity
 @Table(name = "Image")
+
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Image {
     @Id
