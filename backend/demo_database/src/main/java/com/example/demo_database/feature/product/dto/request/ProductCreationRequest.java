@@ -20,18 +20,11 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductCreationRequest {
+
     String productName;
-
-    @NotNull(message = "PRICE_REQUIRED")
-    @DecimalMin(value = "0.0", inclusive = false, message = "PRICE_INVALID")
     BigDecimal price;
-
-    @NotNull(message = "AMOUNT_REQUIRED")
-    @PositiveOrZero(message = "AMOUNT_INVALID")
     Integer amount;
-
     String categoryId;
-
     List<String> images;
 
 }

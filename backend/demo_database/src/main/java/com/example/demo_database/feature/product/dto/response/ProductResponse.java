@@ -12,7 +12,6 @@ import java.util.List;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductResponse {
-    String productId;
     String productName;
     BigDecimal price;
     Integer amount;

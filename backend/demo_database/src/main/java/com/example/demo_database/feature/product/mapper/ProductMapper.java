@@ -16,12 +16,12 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
-    @Mapping(target = "productID", ignore = true)
+//    @Mapping(target = "productID", ignore = true)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "images", ignore = true)
     Product toProduct(ProductCreationRequest request);
 
-    @Mapping(target = "productId", source = "productID")
+//    @Mapping(target = "productId", source = "productID")
     @Mapping(target = "categoryId", expression = "java(product.getCategory() != null ? product.getCategory().getCategoryID() : null)")
     @Mapping(target = "images", expression = "java(extractImageLinks(product))")
     ProductResponse toProductResponse(Product product);

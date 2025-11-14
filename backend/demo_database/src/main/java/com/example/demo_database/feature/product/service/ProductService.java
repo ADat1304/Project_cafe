@@ -11,6 +11,7 @@ import com.example.demo_database.feature.product.repository.ProductRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProductService {
+    @Autowired
     ProductRepository productRepository;
     ProductMapper productMapper;
 

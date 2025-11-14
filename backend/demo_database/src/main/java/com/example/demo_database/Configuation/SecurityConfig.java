@@ -29,7 +29,7 @@ import java.util.List;
 public class SecurityConfig {
 
 
-    private final String[]  PUBLIC_ENDPOINTS={"/users","/auth/token","/auth/introspect"};
+    private final String[]  PUBLIC_ENDPOINTS={"/users","/auth/token","/auth/introspect","/products"};
 
     @Value("${security.jwt.secret}")
     private String SIGNER_KEY;
