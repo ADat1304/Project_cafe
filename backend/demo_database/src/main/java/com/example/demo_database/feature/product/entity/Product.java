@@ -5,7 +5,9 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "Product",
@@ -39,21 +41,11 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoryID", referencedColumnName = "categoryID",
             foreignKey = @ForeignKey(name = "fk_product_category"))
-    Category category;
+    Set<String> category= new HashSet<>();
 
     // One product -> many images
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     List<Image> images;
 
-    // Convenience helper (optional)
-    public void addImage(Image img) {
-        images.add(img);
-        img.setProduct(this);
-    }
-
-    public void removeImage(Image img) {
-        images.remove(img);
-        img.setProduct(null);
-    }
 }
 

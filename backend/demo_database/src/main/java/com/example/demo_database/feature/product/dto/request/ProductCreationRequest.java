@@ -24,7 +24,7 @@ public class ProductCreationRequest {
     String productName;
     BigDecimal price;
     Integer amount;
-    String categoryId;
+    String categoryName;
     List<String> images;
 
 }

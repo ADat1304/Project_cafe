@@ -2,6 +2,7 @@ package com.example.demo_database.feature.product.service;
 
 import com.example.demo_database.common.exception.AppException;
 import com.example.demo_database.common.exception.ErrorCode;
+import com.example.demo_database.feature.product.Category.Category;
 import com.example.demo_database.feature.product.dto.request.ProductCreationRequest;
 import com.example.demo_database.feature.product.dto.response.ProductResponse;
 import com.example.demo_database.feature.product.entity.Image;
@@ -14,6 +15,7 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -38,6 +40,10 @@ public class ProductService {
             product.setImages(images);
         }
 
+        HashSet<String> category= new HashSet<>();
+        String categoryName = request.getCategoryName();
+        category.add(Category.valueOf(categoryName.toUpperCase()).name());
+        product.setCategory(category);
         Product savedProduct = productRepository.save(product);
         return productMapper.toProductResponse(savedProduct);
     }

@@ -16,8 +16,8 @@ import lombok.experimental.FieldDefaults;
 public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "imageID")
-    String imageID;
+    @Column(name = "imageID", length = 36, nullable = false, updatable = false)
+    private String imageID;
 
     @Column(name = "imageLink", length = 512, nullable = false)
     String imageLink;
