@@ -41,7 +41,7 @@ public class Product {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "categoryID", referencedColumnName = "categoryID",
             foreignKey = @ForeignKey(name = "fk_product_category"))
-    Set<String> category= new HashSet<>();
+    Category category;
 
     // One product -> many images
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)

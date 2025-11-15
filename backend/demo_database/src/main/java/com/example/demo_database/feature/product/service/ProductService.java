@@ -2,12 +2,13 @@ package com.example.demo_database.feature.product.service;
 
 import com.example.demo_database.common.exception.AppException;
 import com.example.demo_database.common.exception.ErrorCode;
-import com.example.demo_database.feature.product.Category.Category;
 import com.example.demo_database.feature.product.dto.request.ProductCreationRequest;
 import com.example.demo_database.feature.product.dto.response.ProductResponse;
+import com.example.demo_database.feature.product.entity.Category;
 import com.example.demo_database.feature.product.entity.Image;
 import com.example.demo_database.feature.product.entity.Product;
 import com.example.demo_database.feature.product.mapper.ProductMapper;
+import com.example.demo_database.feature.product.repository.CategoryRepository;
 import com.example.demo_database.feature.product.repository.ProductRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +25,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProductService {
-    @Autowired
     ProductRepository productRepository;
     ProductMapper productMapper;
+    CategoryRepository categoryRepository;
+
 
     public ProductResponse createProduct(ProductCreationRequest request){
         if(productRepository.existsByProductName(request.getProductName()))
@@ -40,9 +42,9 @@ public class ProductService {
             product.setImages(images);
         }
 
-        HashSet<String> category= new HashSet<>();
-        String categoryName = request.getCategoryName();
-        category.add(Category.valueOf(categoryName.toUpperCase()).name());
+        Category category = categoryRepository.findByCategoryName(request.getCategoryName())
+                .orElseThrow(() -> new RuntimeException("Category not found: " + request.getCategoryName()));
+
         product.setCategory(category);
         Product savedProduct = productRepository.save(product);
         return productMapper.toProductResponse(savedProduct);

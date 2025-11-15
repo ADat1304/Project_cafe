@@ -13,9 +13,10 @@ import java.util.Set;
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductResponse {
+    String productID;
     String productName;
     BigDecimal price;
     Integer amount;
-    Set<String> categoryName;
+    String categoryName;
     List<String> images;
 }
