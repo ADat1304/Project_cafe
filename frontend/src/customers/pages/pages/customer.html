@@ -329,7 +329,7 @@
 
             <ul class="navbar-nav flex-column w-100 px-3">
               <li class="nav-item">
-                <a class="nav-link d-flex align-items-center" href="index.html">
+                <a class="nav-link d-flex align-items-center" href="../../../index.html">
                   <i class="bi bi-house-door fs-5"></i>
                   <span class="ms-3 fw-semibold">Trang chủ</span>
                 </a>
@@ -337,7 +337,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="BanHang.html"
+                  href="../../../orders/pages/Banhang.html"
                 >
                   <i class="bi bi-cart3 fs-5"></i>
                   <span class="ms-3 fw-semibold">Bán hàng</span>
@@ -352,7 +352,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="SanPham.html"
+                  href="../../../products/pages/Product.html"
                 >
                   <i class="bi bi-bag fs-5"></i>
                   <span class="ms-3 fw-semibold">Sản phẩm | Menu</span>
@@ -361,7 +361,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="HoaDon.html"
+                  href="../../../orders/pages/HoaDon.html"
                 >
                   <i class="bi bi-receipt fs-5"></i>
                   <span class="ms-3 fw-semibold">Hóa đơn</span>
@@ -370,9 +370,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="NhanVien.html"
-                  data-bs-toggle="modal"
-                  data-bs-target="#authModal"
+                  href="../../../employees/pages/employee.html"
                 >
                   <i class="bi bi-people fs-5"></i>
                   <span class="ms-3 fw-semibold">Nhân viên</span>
@@ -381,7 +379,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link active d-flex align-items-center"
-                  href="KhachHang.html"
+                  href="../customer.html"
                 >
                   <i class="bi bi-person fs-5"></i>
                   <span class="ms-3 fw-semibold">Khách hàng</span>
@@ -390,7 +388,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="KhuyenMai.html"
+                  href="../../../promotions/pages/promo.html"
                 >
                   <i class="bi bi-tag fs-5"></i>
                   <span class="ms-3 fw-semibold">Khuyến mãi</span>
@@ -399,7 +397,7 @@
               <li class="nav-item mt-4">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="DangNhap.html"
+                  href="../../../auth/pages/Login.html"
                 >
                   <i class="bi bi-box-arrow-right fs-5"></i>
                   <span class="ms-3 fw-semibold">Đăng xuất</span>
@@ -422,8 +420,8 @@
                 style="width: 60px; height: 60px"
               />
               <div class="ms-3">
-                <p class="fw-bold mb-0">Tên nhân viên</p>
-                <p class="text-muted mb-0" style="font-size: 0.9rem">Chức vụ</p>
+                <p class="fw-bold mb-0" id="employeeName">Tên nhân viên</p>
+                <p class="text-muted mb-0" style="font-size: 0.9rem" id="employeeRole">Chức vụ</p>
               </div>
             </div>
           </div>
@@ -904,5 +902,26 @@
         </div>
       </div>
     </div>
+
+    <script>
+      // Hàm lấy thông tin user từ localStorage và hiển thị
+      document.addEventListener("DOMContentLoaded", () => {
+        const userInfo = localStorage.getItem("userInfo");
+        const employeeNameEl = document.getElementById("employeeName");
+        const employeeRoleEl = document.getElementById("employeeRole");
+
+        if (userInfo) {
+          try {
+            const user = JSON.parse(userInfo);
+            const displayName = user.sub || user.fullName || user.name || user.username || "Tên nhân viên";
+            employeeNameEl.textContent = displayName;
+            const displayRole = user.scope || user.role || user.position || user.chucVu || "Chức vụ";
+            employeeRoleEl.textContent = displayRole;
+          } catch (error) {
+            console.error("Lỗi khi parse userInfo:", error);
+          }
+        }
+      });
+    </script>
   </body>
 </html>

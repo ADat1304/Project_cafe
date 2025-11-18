@@ -190,7 +190,8 @@
               <li class="nav-item">
                 <a
                   class="nav-link active d-flex align-items-center"
-                  href="index.html"
+                  href="#"
+                  onclick="goHome(event)"
                 >
                   <i class="bi bi-house-door fs-5"></i>
                   <span class="ms-3 fw-semibold">Trang chủ</span>
@@ -199,7 +200,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="BanHang.html"
+                  href="./orders/pages/Banhang.html"
                 >
                   <i class="bi bi-cart3 fs-5"></i>
                   <span class="ms-3 fw-semibold">Bán hàng</span>
@@ -214,7 +215,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="SanPham.html"
+                  href="./products/pages/Product.html"
                 >
                   <i class="bi bi-bag fs-5"></i>
                   <span class="ms-3 fw-semibold">Sản phẩm | Menu</span>
@@ -223,7 +224,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="HoaDon.html"
+                  href="./orders/pages/HoaDon.html"
                 >
                   <i class="bi bi-receipt fs-5"></i>
                   <span class="ms-3 fw-semibold">Hóa đơn</span>
@@ -232,7 +233,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="NhanVien.html"
+                  href="./employees/pages/employee.html"
                 >
                   <i class="bi bi-people fs-5"></i>
                   <span class="ms-3 fw-semibold">Nhân viên</span>
@@ -241,7 +242,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="KhachHang.html"
+                  href="./customers/pages/pages/customer.html"
                 >
                   <i class="bi bi-person fs-5"></i>
                   <span class="ms-3 fw-semibold">Khách hàng</span>
@@ -250,7 +251,7 @@
               <li class="nav-item">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="KhuyenMai.html"
+                  href="./promotions/pages/promo.html"
                 >
                   <i class="bi bi-tag fs-5"></i>
                   <span class="ms-3 fw-semibold">Khuyến mãi</span>
@@ -259,7 +260,8 @@
               <li class="nav-item mt-4">
                 <a
                   class="nav-link d-flex align-items-center"
-                  href="../login/DangNhap.html"
+                  href="#"
+                  onclick="logout(event)"
                 >
                   <i class="bi bi-box-arrow-right fs-5"></i>
                   <span class="ms-3 fw-semibold">Đăng xuất</span>
@@ -282,8 +284,8 @@
                 style="width: 60px; height: 60px"
               />
               <div class="ms-3">
-                <p class="fw-bold mb-0">Tên nhân viên</p>
-                <p class="text-muted mb-0" style="font-size: 0.9rem">Chức vụ</p>
+                <p class="fw-bold mb-0" id="employeeName">Tên nhân viên</p>
+                <p class="text-muted mb-0" style="font-size: 0.9rem" id="employeeRole">Chức vụ</p>
               </div>
             </div>
           </div>
@@ -417,5 +419,105 @@
         </div>
       </div>
     </div>
+
+    <script>
+      // Hàm quay về trang chủ
+      function goHome(event) {
+        event.preventDefault();
+        console.log("Quay về trang chủ");
+        window.location.href = window.location.pathname;
+      }
+
+      // Kiểm tra xem user đã đăng nhập chưa
+      function checkAuthentication() {
+        const token = localStorage.getItem("authToken");
+        const userInfo = localStorage.getItem("userInfo");
+        
+        console.log("Token:", token);
+        console.log("UserInfo:", userInfo);
+        
+        if (!token || !userInfo) {
+          console.warn("⚠ Chưa đăng nhập - Redirect về Login");
+          window.location.href = "./auth/pages/Login.html";
+          return false;
+        }
+        return true;
+      }
+
+      // Helper function để gửi request với token
+      async function apiCall(url, options = {}) {
+        const token = localStorage.getItem("authToken");
+        
+        const headers = {
+          "Content-Type": "application/json",
+          ...options.headers,
+        };
+        
+        // Thêm token vào header nếu có
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        
+        const response = await fetch(url, {
+          ...options,
+          headers,
+        });
+        
+        if (response.status === 403) {
+          console.error("❌ 403 Forbidden - Token không hợp lệ hoặc hết hạn");
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("userInfo");
+          window.location.href = "./auth/pages/Login.html";
+          throw new Error("Token không hợp lệ - Vui lòng đăng nhập lại");
+        }
+        
+        return response;
+      }
+
+      // Hàm đăng xuất
+      function logout(event) {
+        event.preventDefault();
+        
+        // Xóa thông tin user và token
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("userInfo");
+        
+        // Chuyển hướng về trang đăng nhập
+        window.location.href = "./auth/pages/Login.html";
+      }
+
+      // Hàm lấy thông tin user từ localStorage và hiển thị
+      document.addEventListener("DOMContentLoaded", () => {
+        // Kiểm tra đăng nhập trước
+        if (!checkAuthentication()) {
+          return;
+        }
+
+        const userInfo = localStorage.getItem("userInfo");
+        const employeeNameEl = document.getElementById("employeeName");
+        const employeeRoleEl = document.getElementById("employeeRole");
+
+        if (userInfo) {
+          try {
+            const user = JSON.parse(userInfo);
+            console.log("Parsed user:", user);
+            
+            // Hiển thị tên (có thể là username, fullName, hoặc name tùy theo API)
+            const displayName = user.fullName || user.name || user.username || "Tên nhân viên";
+            employeeNameEl.textContent = displayName;
+            console.log("✓ Đã set tên:", displayName);
+            
+            // Hiển thị chức vụ (role hoặc position)
+            const displayRole = user.role || user.position || user.chucVu || "Chức vụ";
+            employeeRoleEl.textContent = displayRole;
+            console.log("✓ Đã set chức vụ:", displayRole);
+          } catch (error) {
+            console.error("❌ Lỗi khi parse userInfo:", error);
+          }
+        } else {
+          console.warn("⚠ Không có userInfo");
+        }
+      });
+    </script>
   </body>
 </html>
