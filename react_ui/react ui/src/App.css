@@ -1,0 +1,256 @@
+:root {
+    color: #0f172a;
+    background-color: #f5f7fb;
+    font-family: 'Be Vietnam Pro', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: #f5f7fb;
+    color: #0f172a;
+}
+
+.app-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+h1 {
+    margin: 4px 0;
+    font-size: 28px;
+}
+
+h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+p {
+    margin: 4px 0;
+}
+
+.eyebrow {
+    text-transform: uppercase;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #0bb783;
+    margin: 0;
+}
+
+.muted {
+    color: #667085;
+}
+
+.alert {
+    padding: 12px 16px;
+    background-color: #e8f9f1;
+    border: 1px solid #7ad3aa;
+    color: #0b5b38;
+    border-radius: 12px;
+    margin-bottom: 16px;
+}
+
+.token-box {
+    padding: 12px 16px;
+    border-radius: 10px;
+    background: #ffffff;
+    border: 1px dashed #d0d7e2;
+    min-width: 200px;
+    text-align: right;
+}
+
+.token-box .label {
+    display: block;
+    font-size: 12px;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.token-box .value {
+    font-family: 'Courier New', monospace;
+    font-weight: 600;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+}
+
+.card.wide {
+    grid-column: 1 / -1;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.form {
+    display: grid;
+    gap: 12px;
+}
+
+.form.inline {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.form label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 14px;
+    color: #1f2937;
+}
+
+.form input,
+.form select {
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #dfe3eb;
+    background: #f9fafb;
+    font-size: 14px;
+}
+
+.form input:focus,
+.form select:focus {
+    outline: 2px solid #0bb783;
+    border-color: #0bb783;
+    background: #fff;
+}
+
+.form button,
+.card-header button {
+    background-color: #0bb783;
+    color: white;
+    padding: 10px 14px;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.form button:hover,
+.card-header button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(11, 183, 131, 0.18);
+}
+
+.form button:disabled,
+.card-header button:disabled {
+    background-color: #9ccfba;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.form .full {
+    grid-column: 1 / -1;
+}
+
+.list {
+    border-top: 1px solid #edf1f7;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #edf1f7;
+}
+
+.title {
+    font-weight: 700;
+    margin: 0;
+}
+
+.badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.badge {
+    background: #e8f9f1;
+    color: #0b5b38;
+    padding: 6px 10px;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.badge.secondary {
+    background: #eef2ff;
+    color: #4338ca;
+}
+
+.order-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.order-row {
+    display: grid;
+    grid-template-columns: 1.2fr 0.6fr 1fr auto;
+    gap: 8px;
+}
+
+button.ghost {
+    background: #f1f5f9;
+    color: #1f2937;
+    border: 1px solid #e2e8f0;
+    box-shadow: none;
+}
+
+button.ghost:hover {
+    transform: none;
+    background: #e2e8f0;
+}
+
+@media (max-width: 640px) {
+    .page-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .order-row {
+        grid-template-columns: 1fr;
+    }
+}
