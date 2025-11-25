@@ -26,8 +26,8 @@ function UsersPage({ users, token, onFetch, disabled }) {
                             <div className="badges">
                                 {(user.roles || []).map((role) => (
                                     <span key={role} className="badge secondary">
-                    {role}
-                  </span>
+                                    {role}
+                                  </span>
                                 ))}
                             </div>
                         </div>
