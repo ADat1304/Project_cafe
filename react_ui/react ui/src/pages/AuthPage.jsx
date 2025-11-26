@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import {useMemo, useState } from 'react';
 
 function AuthPage({ onLogin, onRegister, disabled }) {
     const [loginForm, setLoginForm] = useState({ username: '', password: '' });
     const [registerForm, setRegisterForm] = useState({ username: '', password: '', fullname: '' });
+    const [showPassword, setShowPassword] = useState(false);
+
+    const passwordType = useMemo(() => (showPassword ? 'text' : 'password'), [showPassword]);
 
     const handleSubmitLogin = (event) => {
         event.preventDefault();
@@ -15,82 +18,95 @@ function AuthPage({ onLogin, onRegister, disabled }) {
     };
 
     return (
-        <div className="grid two-col">
-            <div className="card">
-                <div className="card-header">
-                    <div>
-                        <p className="eyebrow">/auth/token</p>
-                        <h2>Đăng nhập</h2>
-                    </div>
-                    <p className="muted">Nhận token để gọi API bảo vệ</p>
+        <div className="auth-layout">
+            <div className="auth-illustration">
+                <div className="auth-illustration__content">
+                    <img
+                        src="./../../public/Login_background.png"
+                        alt="Ảnh đăng nhập"
+                        style={{ width: "452px", height: "525.5px" }}
+                    />
                 </div>
-                <form className="form" onSubmit={handleSubmitLogin}>
-                    <label>
-                        Tên đăng nhập
-                        <input
-                            required
-                            value={loginForm.username}
-                            onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
-                            placeholder="admin"
-                        />
-                    </label>
-                    <label>
-                        Mật khẩu
-                        <input
-                            required
-                            type="password"
-                            value={loginForm.password}
-                            onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                            placeholder="••••••••"
-                        />
-                    </label>
-                    <button type="submit" disabled={disabled('login')}>
-                        {disabled('login') ? 'Đang đăng nhập...' : 'Đăng nhập qua Gateway'}
-                    </button>
-                </form>
+
             </div>
 
-            <div className="card">
-                <div className="card-header">
-                    <div>
-                        <p className="eyebrow">/users</p>
-                        <h2>Đăng ký người dùng</h2>
-                    </div>
-                    <p className="muted">Tạo tài khoản mới cho nhân viên</p>
+            <div className="auth-panel">
+                <div className="auth-panel__header">
+                    <p className="auth-panel__welcome">CHÚC BẠN CÓ MỘT NGÀY LÀM VIỆC TỐT LÀNH!</p>
+                    <h1>ĐĂNG NHẬP ĐỂ TIẾP TỤC</h1>
                 </div>
-                <form className="form" onSubmit={handleSubmitRegister}>
-                    <label>
-                        Họ tên
+
+                <form className="auth-form" onSubmit={handleSubmitLogin}>
+                    <label className="auth-field">
+                        <span>Tên đăng nhập</span>
+                        <div className="auth-input">
+                            <input
+                                required
+                                value={loginForm.username}
+                                onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                                placeholder="admin"
+                            />
+                        </div>
+                    </label>
+                    <label className="auth-field">
+                        <span>Mật khẩu</span>
+                        <div className="auth-input auth-input--password">
+                            <input
+                                required
+                                type={passwordType}
+                                value={loginForm.password}
+                                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                                placeholder="••••••••"
+                            />
+                            <button
+                                type="button"
+                                className="auth-input__toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? 'HIDE' : 'SHOW'}
+                            </button>
+                        </div>
+                    </label>
+                    <button className="auth-submit" type="submit" disabled={disabled('login')}>
+                        {disabled('login') ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                    </button>
+                    <div className="auth-form__footer">
+                        <a href="#">Quên mật khẩu?</a>
+                    </div>
+                </form>
+
+
+                <div className="auth-register">
+                    <div>
+                        <p className="auth-register__title">Chưa có tài khoản?</p>
+                        <p className="muted">Tạo ngay cho nhân viên của bạn</p>
+                    </div>
+                    <form className="auth-register__form" onSubmit={handleSubmitRegister}>
                         <input
                             required
                             value={registerForm.fullname}
                             onChange={(e) => setRegisterForm({ ...registerForm, fullname: e.target.value })}
-                            placeholder="Nguyễn Văn A"
+                            placeholder="Họ Tên"
                         />
-                    </label>
-                    <label>
-                        Tên đăng nhập
                         <input
                             required
                             value={registerForm.username}
                             onChange={(e) => setRegisterForm({ ...registerForm, username: e.target.value })}
-                            placeholder="username"
+                            placeholder="Tên đaăng nhập"
                         />
-                    </label>
-                    <label>
-                        Mật khẩu (tối thiểu 8 ký tự)
+
                         <input
                             required
                             type="password"
                             value={registerForm.password}
                             onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                            placeholder="••••••••"
+                            placeholder="Mật khẩu"
                         />
-                    </label>
-                    <button type="submit" disabled={disabled('register')}>
-                        {disabled('register') ? 'Đang tạo...' : 'Tạo người dùng'}
-                    </button>
-                </form>
+                        <button type="submit" disabled={disabled('register')}>
+                            {disabled('register') ? 'Đang tạo...' : 'Tạo người dùng'}
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     );

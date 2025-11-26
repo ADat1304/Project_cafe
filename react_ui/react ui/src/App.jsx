@@ -1,5 +1,4 @@
 import { useCallback, useMemo, useState } from 'react';
-import { BrowserRouter, NavLink, Navigate, Route, Routes, Link } from 'react-router-dom';
 
 import './App.css';
 import { API_BASE_URL, apiRequest, setAuthToken } from './app/apiClient';
@@ -8,7 +7,7 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import OrdersPage from './pages/OrdersPage';
 import ProductsPage from './pages/ProductsPage';
-import UsersPage from './pages/UsersPage';
+import UsersPage from './pages/UsersPage.jsx';
 
 const navItems = [
     { to: '/dashboard', label: 'Tổng quan', icon: '🏠' },
