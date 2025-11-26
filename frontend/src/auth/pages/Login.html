@@ -328,6 +328,8 @@
       }
     }
 
+    
+    
     document.addEventListener("DOMContentLoaded", () => {
       const form = document.getElementById("loginForm");
       const usernameInput = document.getElementById("username");
@@ -336,7 +338,11 @@
       const loginButton = document.getElementById("loginButton");
       const loginAlert = document.getElementById("loginAlert");
 
-      const API_URL = "http://localhost:8080/api/auth/token";
+      const currentOrigin = window.location.origin;
+      const localApiBase = "http://localhost:8080";
+      const shouldUseLocalApi = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+      const API_URL = `${shouldUseLocalApi ? localApiBase : currentOrigin}/api/auth/token`;
 
       const showAlert = (message, type = "danger") => {
         loginAlert.textContent = message;
