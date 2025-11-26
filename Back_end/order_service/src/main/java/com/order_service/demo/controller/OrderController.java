@@ -11,6 +11,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
@@ -25,6 +27,13 @@ public class OrderController {
         OrderResponse response = orderService.createOrder(request);
         return ApiResponse.<OrderResponse>builder()
                 .result(response)
+                .build();
+    }
+    @GetMapping
+    public ApiResponse<List<OrderResponse>> getAllOrders() {
+        List<OrderResponse> orders = orderService.getAllOrders();
+        return ApiResponse.<List<OrderResponse>>builder()
+                .result(orders)
                 .build();
     }
 }

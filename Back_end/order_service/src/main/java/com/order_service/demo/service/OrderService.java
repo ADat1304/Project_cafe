@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -91,5 +92,10 @@ public class OrderService {
 
         Orders savedOrder = orderRepository.save(order);
         return orderMapper.toOrderResponse(savedOrder);
+    }
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAll().stream()
+                .map(orderMapper::toOrderResponse)
+                .collect(Collectors.toList());
     }
 }
