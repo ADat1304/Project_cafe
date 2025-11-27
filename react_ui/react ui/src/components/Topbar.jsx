@@ -6,8 +6,11 @@ export default function Topbar() {
     const navigate = useNavigate();
 
     const auth = useMemo(() => getAuth(), []);
-    const displayName = auth?.user?.username || "Quản lý";
-    const displayRole = auth?.user?.role || "Chưa xác định";
+    const displayName = auth?.user?.fullname || auth?.user?.username || "Quản lý";
+    const displayRole =
+        (Array.isArray(auth?.user?.roles) && auth.user.roles.length
+            ? auth.user.roles.join(", ")
+            : auth?.user?.role) || "Chưa xác định";
     const tokenPreview = auth?.token ? `${auth.token.substring(0, 18)}...` : "Không có token";
 
     const handleLogout = () => {

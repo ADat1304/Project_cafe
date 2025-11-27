@@ -1,7 +1,7 @@
 // src/pages/DashboardPage.jsx
-import PageHeader from "../Components/PageHeader.jsx";
-import StatCard from "../Components/StatCard.jsx";
-import { getAuth } from "../utils/auth.js";;
+import PageHeader from "../components/PageHeader.jsx";
+import StatCard from "../components/StatCard.jsx";
+import { getAuth } from "../utils/auth.js";
 
 export default function DashboardPage() {
     const auth = getAuth();

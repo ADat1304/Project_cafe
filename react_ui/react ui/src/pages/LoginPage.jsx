@@ -1,34 +1,9 @@
 // src/pages/LoginPage.jsx
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { authenticate, fetchUserById } from "../utils/api.js";
 import { saveAuth, isAuthenticated } from "../utils/auth.js";
 
-const mockLogin = ({ username, password }) =>
-    new Promise((resolve, reject) => {
-        setTimeout(() => {
-            if (!username || !password) {
-                reject(new Error("Vui lòng nhập đầy đủ tài khoản và mật khẩu"));
-                return;
-            }
-
-            if (password.length < 4) {
-                reject(new Error("Mật khẩu phải có ít nhất 4 ký tự"));
-                return;
-            }
-
-            const normalized = username.trim().toLowerCase();
-            const role = normalized.includes("admin") ? "Quản trị viên" : "Nhân viên";
-            const token = btoa(`${username}:${Date.now()}:${role}`);
-
-            resolve({
-                token,
-                user: {
-                    username: username.trim(),
-                    role,
-                },
-            });
-        }, 600);
-    });
 
 export default function LoginPage() {
     const navigate = useNavigate();
@@ -52,8 +27,38 @@ export default function LoginPage() {
         setIsSubmitting(true);
 
         try {
-            const authData = await mockLogin(form);
-            saveAuth(authData);
+            const trimmedUsername = form.username.trim();
+            const authData = await authenticate({
+                username: trimmedUsername,
+                password: form.password,
+            });
+
+            if (!authData?.token) {
+                throw new Error("Không nhận được token từ máy chủ");
+            }
+
+            let profile = null;
+
+            try {
+                profile = await fetchUserById(trimmedUsername, authData.token);
+            } catch (profileErr) {
+                console.warn("Không lấy được thông tin người dùng", profileErr);
+            }
+
+            const roleLabel =
+                (Array.isArray(profile?.roles) && profile.roles.length
+                    ? profile.roles.join(", ")
+                    : profile?.role) || (authData.authenticated ? "Đã xác thực" : "Người dùng");
+
+            saveAuth({
+                token: authData.token,
+                user: {
+                    username: profile?.username || trimmedUsername,
+                    fullname: profile?.fullname || trimmedUsername,
+                    roles: profile?.roles,
+                    role: roleLabel,
+                },
+            });
 
             const next = location.state?.from || "/dashboard";
             navigate(next, { replace: true });
