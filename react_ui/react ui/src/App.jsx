@@ -2,6 +2,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import MainLayout from "./layout/MainLayout.jsx";
+import RequireAuth from "./layout/RequireAuth.jsx";
 
 import DashboardPage from "./pages/Dashboard.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
@@ -15,12 +16,14 @@ export default function App() {
             <Route path="/login" element={<LoginPage />} />
 
             {/* Các trang còn lại dùng chung MainLayout (Sidebar + Topbar) */}
-            <Route element={<MainLayout />}>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/sales" element={<SalesPage />} />
-                <Route path="/products" element={<ProductsPage />} />
-                {/* sau này thêm: statistics, invoices, employees... */}
+            <Route element={<RequireAuth />}>
+                <Route element={<MainLayout />}>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/sales" element={<SalesPage />} />
+                    <Route path="/products" element={<ProductsPage />} />
+                    {/* sau này thêm: statistics, invoices, employees... */}
+                </Route>
             </Route>
 
             {/* fallback: nếu route không khớp thì chuyển về dashboard */}

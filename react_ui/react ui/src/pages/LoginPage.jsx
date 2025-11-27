@@ -1,18 +1,67 @@
 // src/pages/LoginPage.jsx
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { saveAuth, isAuthenticated } from "../utils/auth.js";
+
+const mockLogin = ({ username, password }) =>
+    new Promise((resolve, reject) => {
+        setTimeout(() => {
+            if (!username || !password) {
+                reject(new Error("Vui lòng nhập đầy đủ tài khoản và mật khẩu"));
+                return;
+            }
+
+            if (password.length < 4) {
+                reject(new Error("Mật khẩu phải có ít nhất 4 ký tự"));
+                return;
+            }
+
+            const normalized = username.trim().toLowerCase();
+            const role = normalized.includes("admin") ? "Quản trị viên" : "Nhân viên";
+            const token = btoa(`${username}:${Date.now()}:${role}`);
+
+            resolve({
+                token,
+                user: {
+                    username: username.trim(),
+                    role,
+                },
+            });
+        }, 600);
+    });
 
 export default function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [form, setForm] = useState({ username: "", password: "" });
+    const [error, setError] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (isAuthenticated()) {
+            navigate("/dashboard", { replace: true });
+        }
+    }, [navigate]);
 
     const handleChange = (e) =>
         setForm({ ...form, [e.target.name]: e.target.value });
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        // TODO: call API /auth/login
-        navigate("/dashboard");
+        setError("");
+        setIsSubmitting(true);
+
+        try {
+            const authData = await mockLogin(form);
+            saveAuth(authData);
+
+            const next = location.state?.from || "/dashboard";
+            navigate(next, { replace: true });
+        } catch (err) {
+            setError(err.message || "Đăng nhập thất bại, vui lòng thử lại");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -69,6 +118,8 @@ export default function LoginPage() {
                                         value={form.username}
                                         onChange={handleChange}
                                         placeholder="admin"
+                                        autoComplete="username"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="mb-2">
@@ -79,7 +130,9 @@ export default function LoginPage() {
                                         name="password"
                                         value={form.password}
                                         onChange={handleChange}
-                                        placeholder="••••••••"
+                                        placeholder="•••••••"
+                                        autoComplete="current-password"
+                                        disabled={isSubmitting}
                                     />
                                 </div>
                                 <div className="d-flex justify-content-between align-items-center mb-3">
@@ -88,22 +141,33 @@ export default function LoginPage() {
                                             className="form-check-input"
                                             type="checkbox"
                                             id="remember"
+                                            disabled
                                         />
                                         <label className="form-check-label small" htmlFor="remember">
-                                            Ghi nhớ đăng nhập
+                                            Ghi nhớ đăng nhập (Chưa làm)
                                         </label>
                                     </div>
-                                    <button type="button" className="btn btn-link btn-sm">
+                                    <button type="button" className="btn btn-link btn-sm" disabled>
                                         Quên mật khẩu?
                                     </button>
                                 </div>
+                                {error && (
+                                    <div className="alert alert-danger py-2 small" role="alert">
+                                        {error}
+                                    </div>
+                                )}
+
                                 <button
                                     type="submit"
                                     className="btn btn-success w-100"
                                     style={{ backgroundColor: "#03a66a", borderColor: "#03a66a" }}
+                                    disabled={isSubmitting}
                                 >
-                                    Đăng nhập
+                                    {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
                                 </button>
+                                <p className="text-muted small text-center mt-3 mb-0">
+                                    Gợi ý: dùng tài khoản <strong>admin</strong> để nhận vai trò quản trị
+                                </p>
                             </form>
                         </div>
                     </div>

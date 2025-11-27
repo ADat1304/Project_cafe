@@ -1,8 +1,12 @@
 // src/pages/DashboardPage.jsx
-import PageHeader from "../components/PageHeader.jsx";
-import StatCard from "../components/StatCard.jsx";
+import PageHeader from "../Components/PageHeader.jsx";
+import StatCard from "../Components/StatCard.jsx";
+import { getAuth } from "../utils/auth.js";;
 
 export default function DashboardPage() {
+    const auth = getAuth();
+    const role = auth?.user?.role || "Chưa xác định";
+    const tokenPreview = auth?.token ? `${auth.token.substring(0, 20)}...` : "Không có token";
     return (
         <div>
             <PageHeader
@@ -14,7 +18,13 @@ export default function DashboardPage() {
                     </button>
                 }
             />
-
+            <div className="alert alert-success d-flex align-items-center gap-2" role="alert">
+                <span className="bi bi-shield-lock-fill"></span>
+                <div>
+                    <div className="fw-semibold">Đăng nhập thành công</div>
+                    <div className="small mb-0">Vai trò: {role} • Token: {tokenPreview}</div>
+                </div>
+            </div>
             {/* Hàng card thống kê */}
             <div className="row g-3 mb-3">
                 <div className="col-md-3">
