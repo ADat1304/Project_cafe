@@ -1,0 +1,118 @@
+// src/pages/LoginPage.jsx
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+
+export default function LoginPage() {
+    const navigate = useNavigate();
+    const [form, setForm] = useState({ username: "", password: "" });
+
+    const handleChange = (e) =>
+        setForm({ ...form, [e.target.name]: e.target.value });
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // TODO: call API /auth/login
+        navigate("/dashboard");
+    };
+
+    return (
+        <div
+            className="d-flex align-items-center justify-content-center"
+            style={{ minHeight: "100vh", backgroundColor: "#f3faf7" }}
+        >
+            <div className="row w-100" style={{ maxWidth: 900 }}>
+                {/* Hình minh họa bên trái */}
+                <div className="col-md-6 d-none d-md-flex flex-column justify-content-center">
+                    <h2 className="fw-bold mb-3 text-success">Welcome to Café Manager</h2>
+                    <p className="text-muted">
+                        Quản lý menu, hóa đơn, nhân viên và thống kê doanh thu trong một
+                        bảng điều khiển duy nhất.
+                    </p>
+                    <ul className="text-muted small">
+                        <li>Theo dõi doanh thu theo ngày / tháng</li>
+                        <li>Quản lý bàn & hóa đơn theo thời gian thực</li>
+                        <li>Phân quyền nhân viên theo vai trò</li>
+                    </ul>
+                </div>
+
+                {/* Form login bên phải */}
+                <div className="col-md-6">
+                    <div className="card shadow-sm border-0">
+                        <div className="card-body p-4">
+                            <div className="mb-4 text-center">
+                                <div
+                                    className="rounded-circle mx-auto mb-2 d-flex align-items-center justify-content-center"
+                                    style={{
+                                        width: 56,
+                                        height: 56,
+                                        backgroundColor: "#03a66a",
+                                        color: "#fff",
+                                        fontWeight: "bold",
+                                        fontSize: 24,
+                                    }}
+                                >
+                                    CF
+                                </div>
+                                <h4 className="mb-1">Đăng nhập</h4>
+                                <small className="text-muted">
+                                    Nhập tài khoản để truy cập hệ thống
+                                </small>
+                            </div>
+
+                            <form onSubmit={handleSubmit}>
+                                <div className="mb-3">
+                                    <label className="form-label">Tài khoản</label>
+                                    <input
+                                        type="text"
+                                        className="form-control"
+                                        name="username"
+                                        value={form.username}
+                                        onChange={handleChange}
+                                        placeholder="admin"
+                                    />
+                                </div>
+                                <div className="mb-2">
+                                    <label className="form-label">Mật khẩu</label>
+                                    <input
+                                        type="password"
+                                        className="form-control"
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        placeholder="••••••••"
+                                    />
+                                </div>
+                                <div className="d-flex justify-content-between align-items-center mb-3">
+                                    <div className="form-check">
+                                        <input
+                                            className="form-check-input"
+                                            type="checkbox"
+                                            id="remember"
+                                        />
+                                        <label className="form-check-label small" htmlFor="remember">
+                                            Ghi nhớ đăng nhập
+                                        </label>
+                                    </div>
+                                    <button type="button" className="btn btn-link btn-sm">
+                                        Quên mật khẩu?
+                                    </button>
+                                </div>
+                                <button
+                                    type="submit"
+                                    className="btn btn-success w-100"
+                                    style={{ backgroundColor: "#03a66a", borderColor: "#03a66a" }}
+                                >
+                                    Đăng nhập
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <p className="text-center text-muted small mt-3">
+                        © {new Date().getFullYear()} Café Manager
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
