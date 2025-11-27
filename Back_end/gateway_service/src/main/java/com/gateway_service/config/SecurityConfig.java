@@ -27,7 +27,7 @@ public class SecurityConfig {
 
 
     private static final String[]  PUBLIC_ENDPOINTS={"/users","/auth/token","/auth/introspect","/products","/orders"};
-
+    private static final String[] GET_PUBLIC_ENDPOINTS={"/products","/orders","/tables"};
     @Value("${security.jwt.secret}")
     private String SIGNER_KEY;
 
@@ -37,6 +37,8 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET, GET_PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/tables/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users").hasAuthority("SCOPE_ADMIN")
                         .requestMatchers(HttpMethod.OPTIONS, "/**").hasAuthority("SCOPE_ADMIN")
                         .anyRequest().authenticated());
@@ -59,10 +61,6 @@ public class SecurityConfig {
                 .build();
     }
 
-    @Bean
-    PasswordEncoder passwordEncoder(){
-        return new BCryptPasswordEncoder(10);
-    }
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
