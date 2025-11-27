@@ -36,12 +36,18 @@ public class SecurityConfig {
         httpSecurity
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(request -> request
+                        // POST public
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
+                        // GET public
                         .requestMatchers(HttpMethod.GET, GET_PUBLIC_ENDPOINTS).permitAll()
-
+                        // PATCH public cho đổi trạng thái bàn
+                        .requestMatchers(HttpMethod.PATCH, "/tables/**").permitAll()
+                        .requestMatchers(HttpMethod.PATCH, "/orders/**").permitAll()
+                        // Cho preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // Chỉ ADMIN mới được GET /users
                         .requestMatchers(HttpMethod.GET, "/users").hasAuthority("SCOPE_ADMIN")
-//                        .requestMatchers(HttpMethod.OPTIONS, "/users/**").hasAuthority("SCOPE_ADMIN")
                         .anyRequest().authenticated());
         httpSecurity.oauth2ResourceServer(oauth2
                 ->oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())));

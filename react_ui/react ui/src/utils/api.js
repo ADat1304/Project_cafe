@@ -1,3 +1,5 @@
+import { getAuth } from "./auth.js";
+
 const GATEWAY_BASE_URL = (import.meta.env.VITE_GATEWAY_URL || "http://localhost:8080").replace(/\/$/, "");
 
 const buildUrl = (path) => `${GATEWAY_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
@@ -8,6 +10,8 @@ const parseResult = (payload) =>
         : payload;
 
 async function requestGateway(path, { method = "GET", body, token, headers } = {}) {
+    const authToken = token || getAuth()?.token;
+
     const config = {
         method,
         headers: {
@@ -21,8 +25,8 @@ async function requestGateway(path, { method = "GET", body, token, headers } = {
         config.headers["Content-Type"] = "application/json";
     }
 
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    if (authToken) {
+        config.headers.Authorization = `Bearer ${authToken}`;
     }
 
     const response = await fetch(buildUrl(path), config);
