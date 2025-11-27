@@ -73,4 +73,11 @@ public class ProductService {
         product.setAmount(product.getAmount() - request.getQuantity());
         return productMapper.toProductResponse(productRepository.save(product));
     }
+    public ProductResponse incrementInventory(String productId, InventoryUpdateRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        product.setAmount(product.getAmount() + request.getQuantity());
+        return productMapper.toProductResponse(productRepository.save(product));
+    }
 }

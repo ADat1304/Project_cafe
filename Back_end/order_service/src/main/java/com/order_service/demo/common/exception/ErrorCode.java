@@ -12,7 +12,9 @@ public enum ErrorCode {
     PRODUCT_SERVICE_UNAVAILABLE(1009, "product service is not available"),
     TABLE_NOT_FOUND(1010, "table not found"),
     PAYMENT_METHOD_NOT_FOUND(1011, "payment method not found"),
-    ORDER_ITEMS_EMPTY(1012, "order must contain at least one product");
+    ORDER_ITEMS_EMPTY(1012, "order must contain at least one product"),
+    ORDER_NOT_FOUND(1013, "order not found"),
+    ORDER_STATUS_INVALID(1014, "order status is invalid");
 
     private int code;
     private String messenger;

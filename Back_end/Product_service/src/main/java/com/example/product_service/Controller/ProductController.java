@@ -59,4 +59,13 @@ public class ProductController {
                 .result(product)
                 .build();
     }
+
+    @PostMapping("/{productId}/inventory/increase")
+    public ApiResponse<ProductResponse> incrementInventory(@PathVariable String productId, @Valid @RequestBody InventoryUpdateRequest request) {
+
+        ProductResponse product = productService.incrementInventory(productId, request);
+        return ApiResponse.<ProductResponse>builder()
+                .result(product)
+                .build();
+    }
 }

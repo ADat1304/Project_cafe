@@ -2,8 +2,12 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
-import { fetchTables } from "../utils/api.js";
+import {fetchOrders, fetchTables } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
+
+
+const formatCurrency = (value) =>
+    new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(value || 0));
 
 export default function DashboardPage() {
     const auth = getAuth();
@@ -11,6 +15,9 @@ export default function DashboardPage() {
     const [tables, setTables] = useState([]);
     const [loadingTables, setLoadingTables] = useState(false);
     const [tableError, setTableError] = useState("");
+    const [orders, setOrders] = useState([]);
+    const [loadingOrders, setLoadingOrders] = useState(false);
+    const [orderError, setOrderError] = useState("");
 
     const loadTables = async () => {
         setLoadingTables(true);
@@ -25,9 +32,39 @@ export default function DashboardPage() {
         }
     };
 
+
+    const loadOrders = async () => {
+        setLoadingOrders(true);
+        setOrderError("");
+        try {
+            const data = await fetchOrders(token);
+            setOrders(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setOrderError(err.message || "Không thể tải hóa đơn hôm nay");
+        } finally {
+            setLoadingOrders(false);
+        }
+    };
     useEffect(() => {
         loadTables();
+        loadOrders();
     }, [token]);
+
+    const isToday = (value) => {
+        if (!value) return false;
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return false;
+        const now = new Date();
+        return (
+            parsed.getDate() === now.getDate() &&
+            parsed.getMonth() === now.getMonth() &&
+            parsed.getFullYear() === now.getFullYear()
+        );
+    };
+
+    const todaysOrders = orders.filter((order) => isToday(order.orderDate));
+    const totalRevenue = todaysOrders.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+    const busyTables = tables.filter((table) => table.status === 1).length;
 
     const getBadgeClassByStatus = (status) => {
         if (status === 1) return "bg-secondary-subtle text-secondary";
@@ -62,17 +99,30 @@ export default function DashboardPage() {
             </div>
             {/* Hàng card thống kê */}
             <div className="row g-3 mb-3">
-                <div className="col-md-3">
-                    <StatCard label="Doanh thu hôm nay" value="5.200.000 đ" sub="+12% so với hôm qua" />
+                <div className="col-md-4">
+                    <StatCard
+                        label="Doanh thu hôm nay"
+                        value={loadingOrders ? "Đang tải..." : formatCurrency(totalRevenue)}
+                        sub={orderError || (!loadingOrders && `${todaysOrders.length} hóa đơn`)}
+                    />
                 </div>
-                <div className="col-md-3">
-                    <StatCard label="Số hóa đơn" value="84" sub="+9 đơn" />
+                <div className="col-md-4">
+                    <StatCard
+                        label="Số hóa đơn hôm nay"
+                        value={loadingOrders ? "Đang tải..." : `${todaysOrders.length} hóa đơn`}
+                        sub={orderError || "Tổng số đơn ghi nhận trong ngày"}
+                    />
                 </div>
-                <div className="col-md-3">
-                    <StatCard label="Khách hàng" value="73" sub="18 khách mới" />
-                </div>
-                <div className="col-md-3">
-                    <StatCard label="Bàn đang phục vụ" value="12 / 20" sub="60% công suất" />
+                <div className="col-md-4">
+                    <StatCard
+                        label="Bàn đang phục vụ"
+                        value={loadingTables ? "Đang tải..." : `${busyTables} / ${tables.length || 0}`}
+                        sub={loadingTables
+                            ? "Đang kiểm tra trạng thái bàn"
+                            : tables.length
+                                ? `${Math.round((busyTables / tables.length) * 100)}% công suất`
+                                : "Chưa có dữ liệu bàn"}
+                    />
                 </div>
             </div>
 

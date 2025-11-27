@@ -4,6 +4,7 @@ import com.order_service.demo.common.exception.AppException;
 import com.order_service.demo.common.exception.ErrorCode;
 import com.order_service.demo.dto.request.OrderCreationRequest;
 import com.order_service.demo.dto.request.OrderItemRequest;
+import com.order_service.demo.dto.request.OrderStatusUpdateRequest;
 import com.order_service.demo.dto.response.OrderResponse;
 import com.order_service.demo.entity.CafeTable;
 import com.order_service.demo.entity.OrderDetail;
@@ -67,11 +68,7 @@ public class OrderService {
         for (OrderItemRequest item : request.getItems()) {
             ProductSummary product = productClient.fetchProductByName(item.getProductName());
 
-            if (product.getAmount() < item.getQuantity()) {
-                throw new AppException(ErrorCode.PRODUCT_OUT_OF_STOCK);
-            }
-
-            productClient.decreaseInventory(product.getProductID(), item.getQuantity());
+            productClient.increaseInventory(product.getProductID(), item.getQuantity());
 
             OrderDetail detail = OrderDetail.builder()
                     .order(order)
@@ -92,6 +89,32 @@ public class OrderService {
 
         Orders savedOrder = orderRepository.save(order);
         return orderMapper.toOrderResponse(savedOrder);
+    }
+    @Transactional
+    public OrderResponse updateStatus(String orderId, OrderStatusUpdateRequest request) {
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        String normalizedStatus = request.getStatus() == null ? null : request.getStatus().trim().toUpperCase();
+
+        if (!"OPEN".equals(normalizedStatus) && !"CLOSE".equals(normalizedStatus)) {
+            throw new AppException(ErrorCode.ORDER_STATUS_INVALID);
+        }
+
+        order.setStatus(normalizedStatus);
+
+        CafeTable table = order.getTable();
+        if (table != null) {
+            if ("CLOSE".equals(normalizedStatus)) {
+                table.setStatus(0);
+            } else if ("OPEN".equals(normalizedStatus)) {
+                table.setStatus(1);
+            }
+            cafeTableRepository.save(table);
+        }
+
+        Orders updatedOrder = orderRepository.save(order);
+        return orderMapper.toOrderResponse(updatedOrder);
     }
     public List<OrderResponse> getAllOrders() {
         return orderRepository.findAll().stream()

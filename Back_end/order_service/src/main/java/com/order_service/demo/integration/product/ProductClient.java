@@ -78,6 +78,27 @@ public class ProductClient {
             throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
         }
     }
+    public void increaseInventory(String productId, int quantity) {
+        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+                .path("/products/")
+                .pathSegment(productId)
+                .path("/inventory/increase")
+                .toUriString();
+        try {
+            HttpEntity<InventoryUpdateRequest> request = new HttpEntity<>(new InventoryUpdateRequest(quantity));
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    new ParameterizedTypeReference<ApiResponse<ProductSummary>>() {}
+            );
+        } catch (HttpClientErrorException.NotFound ex) {
+            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        } catch (RestClientException ex) {
+            log.error("Failed to update inventory for product {}", productId, ex);
+            throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
+        }
+    }
 
     private String encode(String value) {
         return UriUtils.encodePathSegment(value, StandardCharsets.UTF_8);

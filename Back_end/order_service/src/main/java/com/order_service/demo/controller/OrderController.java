@@ -2,6 +2,7 @@ package com.order_service.demo.controller;
 
 import com.order_service.demo.common.ApiResponse;
 import com.order_service.demo.dto.request.OrderCreationRequest;
+import com.order_service.demo.dto.request.OrderStatusUpdateRequest;
 import com.order_service.demo.dto.response.OrderResponse;
 import com.order_service.demo.service.OrderService;
 import jakarta.validation.Valid;
@@ -25,6 +26,14 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<OrderResponse> createOrder(@Valid @RequestBody OrderCreationRequest request) {
         OrderResponse response = orderService.createOrder(request);
+        return ApiResponse.<OrderResponse>builder()
+                .result(response)
+                .build();
+    }
+    @PatchMapping("/{orderId}/status")
+    public ApiResponse<OrderResponse> updateStatus(@PathVariable String orderId,
+                                                   @Valid @RequestBody OrderStatusUpdateRequest request) {
+        OrderResponse response = orderService.updateStatus(orderId, request);
         return ApiResponse.<OrderResponse>builder()
                 .result(response)
                 .build();

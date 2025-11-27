@@ -1,7 +1,7 @@
 // src/pages/SalesPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
-import {createOrder, fetchOrders, fetchProducts } from "../utils/api.js";
+import {createOrder, fetchOrders, fetchProducts, updateOrderStatus, updateTableStatus } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
 
 const formatCurrency = (value) =>
@@ -34,6 +34,10 @@ export default function SalesPage() {
     const [createOrderSuccess, setCreateOrderSuccess] = useState("");
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [orderForm, setOrderForm] = useState(createEmptyOrderForm);
+    const [actionMessage, setActionMessage] = useState("");
+    const [actionError, setActionError] = useState("");
+    const [closingOrderId, setClosingOrderId] = useState(null);
+    const [updatingTable, setUpdatingTable] = useState(false);
 
     const loadOrders = async () => {
         setLoadingOrders(true);
@@ -121,6 +125,47 @@ export default function SalesPage() {
             setCreatingOrder(false);
         }
     };
+
+    const handleMarkTableBusy = async () => {
+        setActionError("");
+        setActionMessage("");
+
+        if (!selectedOrder?.tableNumber) {
+            setActionError("Hóa đơn chưa có thông tin bàn");
+            return;
+        }
+
+        setUpdatingTable(true);
+        try {
+            await updateTableStatus(selectedOrder.tableNumber, 1, token);
+            setActionMessage(`Cập nhật bàn ${selectedOrder.tableNumber} sang trạng thái bận thành công`);
+            await loadOrders();
+        } catch (err) {
+            setActionError(err.message || "Không thể cập nhật trạng thái bàn");
+        } finally {
+            setUpdatingTable(false);
+        }
+    };
+
+    const handleCloseOrder = async (order) => {
+        setActionError("");
+        setActionMessage("");
+        setClosingOrderId(order.orderId);
+        try {
+            await updateOrderStatus(order.orderId, "CLOSE", token);
+
+            if (order.tableNumber) {
+                await updateTableStatus(order.tableNumber, 0, token);
+            }
+
+            setActionMessage(`Đã chuyển hóa đơn ${order.orderId} sang trạng thái CLOSE`);
+            await loadOrders();
+        } catch (err) {
+            setActionError(err.message || "Không thể cập nhật trạng thái hóa đơn");
+        } finally {
+            setClosingOrderId(null);
+        }
+    };
     return (
         <div>
             <PageHeader
@@ -184,6 +229,21 @@ export default function SalesPage() {
                                                 <span className="badge bg-success-subtle text-success text-uppercase">
                                                     {order.status || "N/A"}
                                                 </span>
+                                                {order.status?.toUpperCase() === "OPEN" && (
+                                                    <div className="mt-1">
+                                                        <button
+                                                            className="btn btn-outline-secondary btn-sm w-100"
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleCloseOrder(order);
+                                                            }}
+                                                            disabled={closingOrderId === order.orderId}
+                                                        >
+                                                            {closingOrderId === order.orderId ? "Đang đóng..." : "Đóng hóa đơn"}
+                                                        </button>
+                                                    </div>
+                                                )}
                                             </div>
                                         </button>
                                     ))}
@@ -240,6 +300,12 @@ export default function SalesPage() {
                                 <div className="text-muted small">Chọn một hóa đơn để xem chi tiết</div>
                             ) : (
                                 <>
+                                    {actionError && (
+                                        <div className="alert alert-danger py-2 small" role="alert">{actionError}</div>
+                                    )}
+                                    {actionMessage && (
+                                        <div className="alert alert-success py-2 small" role="alert">{actionMessage}</div>
+                                    )}
                                 <div className="d-flex justify-content-between mb-2 small text-muted">
                                     <span>Bàn: {selectedOrder.tableNumber || selectedOrder.tableId || "?"}</span>
                                     <span>Trạng thái: {selectedOrder.status || "N/A"}</span>
@@ -290,17 +356,30 @@ export default function SalesPage() {
                                         Phương thức thanh toán: {selectedOrder.paymentMethodType || "Chưa xác định"}
                                     </div>
 
-                                    <div className="d-flex gap-2">
-                                        <button className="btn btn-outline-secondary w-100" disabled>
-                                            Lưu tạm
-                                        </button>
-                                        <button
-                                            className="btn btn-success w-100"
-                                            style={{ backgroundColor: "#03a66a", borderColor: "#03a66a" }}
-                                            disabled
-                                        >
-                                            Thanh toán
-                                        </button>
+                                    <div className="d-flex flex-column gap-2">
+                                        <div className="d-flex gap-2">
+                                            <button
+                                                className="btn btn-outline-secondary w-100"
+                                                type="button"
+                                                onClick={handleMarkTableBusy}
+                                                disabled={updatingTable || !selectedOrder.tableNumber}
+                                            >
+                                                {updatingTable ? "Đang cập nhật..." : "Thành công (Bàn bận)"}
+                                            </button>
+                                            <button className="btn btn-outline-secondary w-100" disabled>
+                                                Lưu tạm
+                                            </button>
+                                        </div>
+                                        {selectedOrder.status?.toUpperCase() === "OPEN" && (
+                                            <button
+                                                className="btn btn-success w-100"
+                                                style={{ backgroundColor: "#03a66a", borderColor: "#03a66a" }}
+                                                onClick={() => handleCloseOrder(selectedOrder)}
+                                                disabled={closingOrderId === selectedOrder.orderId}
+                                            >
+                                                {closingOrderId === selectedOrder.orderId ? "Đang đóng..." : "Đóng hóa đơn"}
+                                            </button>
+                                        )}
                                     </div>
                                 </>
                             )}

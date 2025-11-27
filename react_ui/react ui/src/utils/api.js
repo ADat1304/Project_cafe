@@ -84,10 +84,19 @@ export const decrementProductInventory = (productId, data, token) =>
 
 // ===== Tables =====
 export const fetchTables = (token) => requestGateway("/tables", { token });
+export const updateTableStatus = (tableNumber, status, token) =>
+    requestGateway(`/tables/${encodeURIComponent(tableNumber)}/status`, {
+        method: "PATCH",
+        body: { status },
+        token,
+    });
 // ===== Orders =====
 export const createOrder = (data, token) =>
     requestGateway("/orders", { method: "POST", body: data, token });
 
 export const fetchOrders = (token) => requestGateway("/orders", { token });
+export const updateOrderStatus = (orderId, status, token) =>
+    requestGateway(`/orders/${orderId}/status`, { method: "PATCH", body: { status }, token });
+
 
 export { GATEWAY_BASE_URL, requestGateway };

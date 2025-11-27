@@ -38,9 +38,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(HttpMethod.POST, PUBLIC_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.GET, GET_PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.OPTIONS, "/tables/**").permitAll()
+
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/users").hasAuthority("SCOPE_ADMIN")
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").hasAuthority("SCOPE_ADMIN")
+//                        .requestMatchers(HttpMethod.OPTIONS, "/users/**").hasAuthority("SCOPE_ADMIN")
                         .anyRequest().authenticated());
         httpSecurity.oauth2ResourceServer(oauth2
                 ->oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder())));
