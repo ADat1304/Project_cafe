@@ -77,16 +77,17 @@ export default function LoginPage() {
             <div className="row w-100" style={{ maxWidth: 900 }}>
                 {/* Hình minh họa bên trái */}
                 <div className="col-md-6 d-none d-md-flex flex-column justify-content-center">
-                    <h2 className="fw-bold mb-3 text-success">Welcome to Café Manager</h2>
-                    <p className="text-muted">
-                        Quản lý menu, hóa đơn, nhân viên và thống kê doanh thu trong một
-                        bảng điều khiển duy nhất.
-                    </p>
-                    <ul className="text-muted small">
-                        <li>Theo dõi doanh thu theo ngày / tháng</li>
-                        <li>Quản lý bàn & hóa đơn theo thời gian thực</li>
-                        <li>Phân quyền nhân viên theo vai trò</li>
-                    </ul>
+                    {/*<h2 className="fw-bold mb-3 text-success">Welcome to Café Manager</h2>*/}
+                    {/*<p className="text-muted">*/}
+                    {/*    Quản lý menu, hóa đơn, nhân viên và thống kê doanh thu trong một*/}
+                    {/*    bảng điều khiển duy nhất.*/}
+                    {/*</p>*/}
+                    {/*<ul className="text-muted small">*/}
+                    {/*    <li>Theo dõi doanh thu theo ngày / tháng</li>*/}
+                    {/*    <li>Quản lý bàn & hóa đơn theo thời gian thực</li>*/}
+                    {/*    <li>Phân quyền nhân viên theo vai trò</li>*/}
+                    {/*</ul>*/}
+                    <img src="./../../public/Login_background.png" alt="background"/>
                 </div>
 
                 {/* Form login bên phải */}
@@ -140,22 +141,22 @@ export default function LoginPage() {
                                         disabled={isSubmitting}
                                     />
                                 </div>
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <div className="form-check">
-                                        <input
-                                            className="form-check-input"
-                                            type="checkbox"
-                                            id="remember"
-                                            disabled
-                                        />
-                                        <label className="form-check-label small" htmlFor="remember">
-                                            Ghi nhớ đăng nhập (Chưa làm)
-                                        </label>
-                                    </div>
-                                    <button type="button" className="btn btn-link btn-sm" disabled>
-                                        Quên mật khẩu?
-                                    </button>
-                                </div>
+                                {/*<div className="d-flex justify-content-between align-items-center mb-3">*/}
+                                {/*    <div className="form-check">*/}
+                                {/*        <input*/}
+                                {/*            className="form-check-input"*/}
+                                {/*            type="checkbox"*/}
+                                {/*            id="remember"*/}
+                                {/*            disabled*/}
+                                {/*        />*/}
+                                {/*        <label className="form-check-label small" htmlFor="remember">*/}
+                                {/*            Ghi nhớ đăng nhập (Chưa làm)*/}
+                                {/*        </label>*/}
+                                {/*    </div>*/}
+                                {/*    <button type="button" className="btn btn-link btn-sm" disabled>*/}
+                                {/*        Quên mật khẩu?*/}
+                                {/*    </button>*/}
+                                {/*</div>*/}
                                 {error && (
                                     <div className="alert alert-danger py-2 small" role="alert">
                                         {error}
@@ -170,9 +171,9 @@ export default function LoginPage() {
                                 >
                                     {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
                                 </button>
-                                <p className="text-muted small text-center mt-3 mb-0">
-                                    Gợi ý: dùng tài khoản <strong>admin</strong> để nhận vai trò quản trị
-                                </p>
+                                {/*<p className="text-muted small text-center mt-3 mb-0">*/}
+                                {/*    Gợi ý: dùng tài khoản <strong>admin</strong> để nhận vai trò quản trị*/}
+                                {/*</p>*/}
                             </form>
                         </div>
                     </div>

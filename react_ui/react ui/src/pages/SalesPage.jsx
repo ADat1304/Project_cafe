@@ -1,7 +1,7 @@
 // src/pages/SalesPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
-import { fetchOrders, fetchProducts } from "../utils/api.js";
+import {createOrder, fetchOrders, fetchProducts } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
 
 const formatCurrency = (value) =>
@@ -13,10 +13,12 @@ const formatDateTime = (value) => {
     if (Number.isNaN(parsed.getTime())) return value;
     return parsed.toLocaleString("vi-VN");
 };
-const mockOrderLines = [
-    { id: 1, name: "Cà phê sữa", qty: 2, price: 25000 },
-    { id: 2, name: "Trà đào cam sả", qty: 1, price: 39000 },
-];
+const createEmptyOrderForm = () => ({
+    tableNumber: "",
+    paymentMethodType: "CASH",
+    items: [{ productName: "", quantity: 1, notes: "" }],
+});
+
 
 export default function SalesPage() {
     const token = useMemo(() => getAuth()?.token, []);
@@ -27,6 +29,11 @@ export default function SalesPage() {
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [loadingProducts, setLoadingProducts] = useState(false);
     const [selectedOrderId, setSelectedOrderId] = useState(null);
+    const [creatingOrder, setCreatingOrder] = useState(false);
+    const [createOrderError, setCreateOrderError] = useState("");
+    const [createOrderSuccess, setCreateOrderSuccess] = useState("");
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [orderForm, setOrderForm] = useState(createEmptyOrderForm);
 
     const loadOrders = async () => {
         setLoadingOrders(true);
@@ -65,6 +72,55 @@ export default function SalesPage() {
     const selectedOrder =
         orders.find((order) => order.orderId === selectedOrderId) || (orders.length ? orders[0] : null);
 
+
+    const updateItem = (idx, field, value) => {
+        setOrderForm((prev) => {
+            const nextItems = prev.items.map((item, i) => (i === idx ? { ...item, [field]: value } : item));
+            return { ...prev, items: nextItems };
+        });
+    };
+
+    const addItem = () => {
+        setOrderForm((prev) => ({ ...prev, items: [...prev.items, { productName: "", quantity: 1, notes: "" }] }));
+    };
+
+    const removeItem = (idx) => {
+        setOrderForm((prev) => ({ ...prev, items: prev.items.filter((_, i) => i !== idx) }));
+    };
+
+    const handleCreateOrder = async (evt) => {
+        evt.preventDefault();
+        setCreateOrderError("");
+        setCreateOrderSuccess("");
+        setCreatingOrder(true);
+        try {
+            const payload = {
+                tableNumber: orderForm.tableNumber.trim(),
+                paymentMethodType: orderForm.paymentMethodType || undefined,
+                items: orderForm.items
+                    .map((item) => ({
+                        productName: item.productName.trim(),
+                        quantity: Number(item.quantity || 0),
+                        notes: item.notes?.trim() || undefined,
+                    }))
+                    .filter((item) => item.productName && item.quantity > 0),
+            };
+
+            if (!payload.items.length) {
+                throw new Error("Nhập ít nhất 1 sản phẩm và số lượng hợp lệ");
+            }
+
+            await createOrder(payload, token);
+            setCreateOrderSuccess("Tạo hóa đơn thành công");
+            setOrderForm(createEmptyOrderForm());
+            setShowCreateModal(false);
+            await loadOrders();
+        } catch (err) {
+            setCreateOrderError(err.message || "Không thể tạo hóa đơn");
+        } finally {
+            setCreatingOrder(false);
+        }
+    };
     return (
         <div>
             <PageHeader
@@ -77,6 +133,17 @@ export default function SalesPage() {
                         </button>
                         <button className="btn btn-outline-success btn-sm" onClick={loadProducts} disabled={loadingProducts}>
                             <span className="bi bi-arrow-repeat me-1"></span>Làm mới sản phẩm
+                        </button>
+                        <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => {
+                                setCreateOrderError("");
+                                setCreateOrderSuccess("");
+                                setOrderForm(createEmptyOrderForm());
+                                setShowCreateModal(true);
+                            }}
+                        >
+                            <span className="bi bi-plus-lg me-1"></span>Thêm hóa đơn
                         </button>
                     </div>
                 }
@@ -127,7 +194,7 @@ export default function SalesPage() {
                 </div>
 
                 <div className="col-md-4">
-                    <div className="card shadow-sm border-0 h-100">
+                    <div className="card shadow-sm border-0 h-100 mb-3">
                         <div className="card-body">
                             <div className="d-flex justify-content-between align-items-center mb-3">
                                 <h6 className="mb-0">Menu sản phẩm</h6>
@@ -241,6 +308,125 @@ export default function SalesPage() {
                     </div>
                 </div>
             </div>
+            {showCreateModal && (
+                <>
+                    <div className="modal fade show d-block" tabIndex="-1" role="dialog" aria-modal="true">
+                        <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
+                            <div className="modal-content">
+                                <div className="modal-header">
+                                    <h5 className="modal-title">Thêm hóa đơn</h5>
+                                    <button
+                                        type="button"
+                                        className="btn-close"
+                                        aria-label="Close"
+                                        onClick={() => {
+                                            setShowCreateModal(false);
+                                            setCreateOrderError("");
+                                            setCreateOrderSuccess("");
+                                        }}
+                                    ></button>
+                                </div>
+                                <div className="modal-body">
+                                    <p className="small text-muted mb-3">Gửi trực tiếp lên API gateway.</p>
+                                    {createOrderError && (
+                                        <div className="alert alert-danger py-2 small" role="alert">{createOrderError}</div>
+                                    )}
+                                    {createOrderSuccess && (
+                                        <div className="alert alert-success py-2 small" role="alert">{createOrderSuccess}</div>
+                                    )}
+                                    <form className="small" onSubmit={handleCreateOrder}>
+                                        <div className="row g-2 mb-2">
+                                            <div className="col-6">
+                                                <label className="form-label">Số bàn</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-control form-control-sm"
+                                                    value={orderForm.tableNumber}
+                                                    onChange={(e) =>
+                                                        setOrderForm((prev) => ({ ...prev, tableNumber: e.target.value }))
+                                                    }
+                                                    placeholder="VD: 12"
+                                                />
+                                            </div>
+                                            <div className="col-6">
+                                                <label className="form-label">Thanh toán</label>
+                                                <select
+                                                    className="form-select form-select-sm"
+                                                    value={orderForm.paymentMethodType}
+                                                    onChange={(e) =>
+                                                        setOrderForm((prev) => ({ ...prev, paymentMethodType: e.target.value }))
+                                                    }
+                                                >
+                                                    <option value="CASH">Tiền mặt</option>
+                                                    <option value="CARD">Thẻ</option>
+                                                    <option value="TRANSFER">Chuyển khoản</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="mb-2">
+                                            <div className="d-flex justify-content-between align-items-center mb-1">
+                                                <label className="form-label mb-0">Dòng sản phẩm</label>
+                                                <button className="btn btn-outline-secondary btn-sm" type="button" onClick={addItem}>
+                                                    + Thêm dòng
+                                                </button>
+                                            </div>
+                                            {orderForm.items.map((item, idx) => (
+                                                <div key={idx} className="border rounded-3 p-2 mb-2">
+                                                    <div className="d-flex gap-2 align-items-center mb-2">
+                                                        <select
+                                                            className="form-select form-select-sm"
+                                                            value={item.productName}
+                                                            onChange={(e) => updateItem(idx, "productName", e.target.value)}
+                                                        >
+                                                            <option value="">Chọn sản phẩm</option>
+                                                            {products.map((p) => (
+                                                                <option key={p.productID} value={p.productName}>
+                                                                    {p.productName}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            className="form-control form-control-sm"
+                                                            style={{ maxWidth: 90 }}
+                                                            value={item.quantity}
+                                                            onChange={(e) => updateItem(idx, "quantity", e.target.value)}
+                                                        />
+                                                        <button
+                                                            className="btn btn-outline-danger btn-sm"
+                                                            type="button"
+                                                            onClick={() => removeItem(idx)}
+                                                            disabled={orderForm.items.length === 1}
+                                                        >
+                                                            <span className="bi bi-trash"></span>
+                                                        </button>
+                                                    </div>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        placeholder="Ghi chú"
+                                                        value={item.notes}
+                                                        onChange={(e) => updateItem(idx, "notes", e.target.value)}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="d-grid">
+                                            <button className="btn btn-success btn-sm" type="submit" disabled={creatingOrder}>
+                                                {creatingOrder ? "Đang tạo..." : "Lưu hóa đơn"}
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="modal-backdrop fade show"></div>
+                </>
+            )}
         </div>
     );
 }

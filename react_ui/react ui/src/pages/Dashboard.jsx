@@ -1,10 +1,45 @@
 // src/pages/DashboardPage.jsx
+import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
+import { fetchTables } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
 
 export default function DashboardPage() {
     const auth = getAuth();
+    const token = useMemo(() => auth?.token, [auth]);
+    const [tables, setTables] = useState([]);
+    const [loadingTables, setLoadingTables] = useState(false);
+    const [tableError, setTableError] = useState("");
+
+    const loadTables = async () => {
+        setLoadingTables(true);
+        setTableError("");
+        try {
+            const data = await fetchTables(token);
+            setTables(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setTableError(err.message || "Không thể tải danh sách bàn");
+        } finally {
+            setLoadingTables(false);
+        }
+    };
+
+    useEffect(() => {
+        loadTables();
+    }, [token]);
+
+    const getBadgeClassByStatus = (status) => {
+        if (status === 1) return "bg-secondary-subtle text-secondary";
+        if (status === 0) return "bg-success-subtle text-success";
+        return "bg-warning-subtle text-warning";
+    };
+
+    const getStatusLabel = (status) => {
+        if (status === 1) return "Đang bận";
+        if (status === 0) return "Trống";
+        return "Không rõ";
+    };
     const role = auth?.user?.role || "Chưa xác định";
     const tokenPreview = auth?.token ? `${auth.token.substring(0, 20)}...` : "Không có token";
     return (
@@ -88,19 +123,33 @@ export default function DashboardPage() {
                     <div className="card shadow-sm border-0">
                         <div className="card-body">
                             <h6 className="mb-2">Trạng thái bàn</h6>
-                            <div className="d-flex flex-wrap gap-2">
-                                {["B1", "B2", "B3", "B4", "B5", "B6"].map((table, idx) => (
-                                    <span
-                                        key={table}
-                                        className={
-                                            "badge rounded-pill px-3 py-2 " +
-                                            (idx < 3 ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")
-                                        }
-                                    >
-                    {table}
-                  </span>
-                                ))}
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                <button className="btn btn-outline-secondary btn-sm" onClick={loadTables} disabled={loadingTables}>
+                                    <span className="bi bi-arrow-clockwise me-1"></span>Làm mới
+                                </button>
                             </div>
+                            {tableError && (
+                                <div className="alert alert-danger py-2 small" role="alert">
+                                    {tableError}
+                                </div>
+                            )}
+                            {loadingTables ? (
+                                <div className="text-muted small">Đang tải trạng thái bàn...</div>
+                            ) : tables.length === 0 ? (
+                                <div className="text-muted small">Chưa có dữ liệu bàn</div>
+                            ) : (
+                                <div className="d-flex flex-wrap gap-2">
+                                    {tables.map((table) => (
+                                        <span
+                                            key={table.tableId || table.tableNumber}
+                                            className={`badge rounded-pill px-3 py-2 ${getBadgeClassByStatus(table.status)}`}
+                                            title={`Trạng thái: ${getStatusLabel(table.status)}`}
+                                        >
+                                            {table.tableNumber || "Bàn ?"}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

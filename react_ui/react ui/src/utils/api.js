@@ -82,6 +82,8 @@ export const decrementProductInventory = (productId, data, token) =>
         token,
     });
 
+// ===== Tables =====
+export const fetchTables = (token) => requestGateway("/tables", { token });
 // ===== Orders =====
 export const createOrder = (data, token) =>
     requestGateway("/orders", { method: "POST", body: data, token });
