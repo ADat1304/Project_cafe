@@ -188,7 +188,7 @@ export default function SalesPage() {
                                 setShowCreateModal(true);
                             }}
                         >
-                            <span className="bi bi-plus-lg me-1"></span>Thêm hóa đơn
+                            <span className="bi bi-plus-lg me-1"></span>Thêm Đơn Hàng
                         </button>
                     </div>
                 }
@@ -393,7 +393,7 @@ export default function SalesPage() {
                         <div className="modal-dialog modal-dialog-centered modal-lg" role="document">
                             <div className="modal-content">
                                 <div className="modal-header">
-                                    <h5 className="modal-title">Thêm hóa đơn</h5>
+                                    <h5 className="modal-title">Thêm đơn hàng</h5>
                                     <button
                                         type="button"
                                         className="btn-close"
