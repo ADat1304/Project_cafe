@@ -1,6 +1,7 @@
 import { getAuth } from "./auth.js";
 
 const GATEWAY_BASE_URL = (import.meta.env.VITE_GATEWAY_URL || "http://localhost:8080").replace(/\/$/, "");
+const ESB_PREFIX = "/esb";
 
 const buildUrl = (path) => `${GATEWAY_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 
@@ -51,56 +52,59 @@ async function requestGateway(path, { method = "GET", body, token, headers } = {
 
 // ===== Authentication =====
 export const authenticate = (credentials) =>
-    requestGateway("/auth/token", { method: "POST", body: credentials });
+    requestGateway(`${ESB_PREFIX}/auth/login`, { method: "POST", body: credentials });
 
 export const introspectToken = (token) =>
-    requestGateway("/auth/introspect", { method: "POST", body: { token } });
+    requestGateway(`${ESB_PREFIX}/auth/validate`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
 
 // ===== Users =====
 export const createUser = (data, token) =>
-    requestGateway("/users", { method: "POST", body: data, token });
+    requestGateway(`${ESB_PREFIX}/users`, { method: "POST", body: data, token });
 
-export const fetchUsers = (token) => requestGateway("/users", { token });
+export const fetchUsers = (token) => requestGateway(`${ESB_PREFIX}/users`, { token });
 
-export const fetchUserById = (userId, token) => requestGateway(`/users/${userId}`, { token });
+export const fetchUserById = (userId, token) => requestGateway(`${ESB_PREFIX}/users/${userId}`, { token });
 
 export const updateUser = (userId, data, token) =>
-    requestGateway(`/users/${userId}`, { method: "PUT", body: data, token });
+    requestGateway(`${ESB_PREFIX}/users/${userId}`, { method: "PUT", body: data, token });
 
 export const deleteUser = (userId, token) =>
-    requestGateway(`/users/${userId}`, { method: "DELETE", token });
+    requestGateway(`${ESB_PREFIX}/users/${userId}`, { method: "DELETE", token });
 
 // ===== Products =====
 export const createProduct = (data, token) =>
-    requestGateway("/products", { method: "POST", body: data, token });
+    requestGateway(`${ESB_PREFIX}/products`, { method: "POST", body: data, token });
 
-export const fetchProducts = (token) => requestGateway("/products", { token });
+export const fetchProducts = (token) => requestGateway(`${ESB_PREFIX}/products`, { token });
 
 export const fetchProductByName = (name, token) =>
-    requestGateway(`/products/name/${encodeURIComponent(name)}`, { token });
+    requestGateway(`${ESB_PREFIX}/products/name/${encodeURIComponent(name)}`, { token });
 
 export const decrementProductInventory = (productId, data, token) =>
-    requestGateway(`/products/${productId}/inventory/decrease`, {
+    requestGateway(`${ESB_PREFIX}/products/${productId}/inventory/decrease`, {
         method: "POST",
         body: data,
         token,
     });
 
 // ===== Tables =====
-export const fetchTables = (token) => requestGateway("/tables", { token });
+export const fetchTables = (token) => requestGateway(`${ESB_PREFIX}/tables`, { token });
 export const updateTableStatus = (tableNumber, status, token) =>
-    requestGateway(`/tables/${encodeURIComponent(tableNumber)}/status`, {
+    requestGateway(`${ESB_PREFIX}/tables/${encodeURIComponent(tableNumber)}/status`, {
         method: "PATCH",
         body: { status },
         token,
     });
 // ===== Orders =====
 export const createOrder = (data, token) =>
-    requestGateway("/orders", { method: "POST", body: data, token });
+    requestGateway(`${ESB_PREFIX}/orders`, { method: "POST", body: data, token });
 
-export const fetchOrders = (token) => requestGateway("/orders", { token });
+export const fetchOrders = (token) => requestGateway(`${ESB_PREFIX}/orders`, { token });
 export const updateOrderStatus = (orderId, status, token) =>
-    requestGateway(`/orders/${orderId}/status`, { method: "PATCH", body: { status }, token });
+    requestGateway(`${ESB_PREFIX}/orders/${orderId}/status`, { method: "PATCH", body: { status }, token });
 
 
 export { GATEWAY_BASE_URL, requestGateway };
