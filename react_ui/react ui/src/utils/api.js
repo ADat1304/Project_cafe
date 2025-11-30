@@ -3,7 +3,21 @@ import { getAuth } from "./auth.js";
 const GATEWAY_BASE_URL = (import.meta.env.VITE_GATEWAY_URL || "http://localhost:8080").replace(/\/$/, "");
 const ESB_PREFIX = "/esb";
 
-const buildUrl = (path) => `${GATEWAY_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+const buildUrl = (path) => {
+    const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+    const baseHasPrefix = ESB_PREFIX && GATEWAY_BASE_URL.endsWith(ESB_PREFIX);
+    const pathHasPrefix = ESB_PREFIX &&
+        (normalizedPath === ESB_PREFIX || normalizedPath.startsWith(`${ESB_PREFIX}/`));
+
+    // Avoid duplicating the ESB prefix if the base URL already contains it
+    const effectivePath = baseHasPrefix && pathHasPrefix
+        ? normalizedPath.slice(ESB_PREFIX.length) || "/"
+        : !baseHasPrefix && !pathHasPrefix && ESB_PREFIX
+            ? `${ESB_PREFIX}${normalizedPath}`
+            : normalizedPath;
+
+    return `${GATEWAY_BASE_URL}${effectivePath}`;
+};
 
 const parseResult = (payload) =>
     payload && typeof payload === "object" && Object.prototype.hasOwnProperty.call(payload, "result")
@@ -27,7 +41,10 @@ async function requestGateway(path, { method = "GET", body, token, headers } = {
     }
 
     if (authToken) {
-        config.headers.Authorization = `Bearer ${authToken}`;
+        const normalizedToken = authToken.trim();
+        config.headers.Authorization = normalizedToken.startsWith("Bearer ")
+            ? normalizedToken
+            : `Bearer ${normalizedToken}`;
     }
 
     const response = await fetch(buildUrl(path), config);

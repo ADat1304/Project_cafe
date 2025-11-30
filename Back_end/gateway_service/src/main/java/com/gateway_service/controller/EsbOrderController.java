@@ -4,15 +4,11 @@ import com.gateway_service.client.OrderClient;
 import com.gateway_service.dto.esb.OrchestratedOrderResponse;
 import com.gateway_service.dto.order.OrderCreationRequest;
 import com.gateway_service.dto.order.OrderResponse;
+import com.gateway_service.dto.order.OrderStatusUpdateRequest;
 import com.gateway_service.service.OrderOrchestrationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -40,5 +36,14 @@ public class EsbOrderController {
     ) {
         String token = authorization.replace("Bearer ", "");
         return ResponseEntity.ok(orderClient.getAllOrders(token));
+    }
+    @PatchMapping("/{orderId}/status")
+    public ResponseEntity<OrderResponse> updateStatus(
+            @PathVariable String orderId,
+            @RequestHeader(name = "Authorization") String authorization,
+            @RequestBody OrderStatusUpdateRequest request
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(orderClient.updateStatus(orderId, request, token));
     }
 }

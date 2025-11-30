@@ -1,12 +1,10 @@
 package com.gateway_service.client;
 
-
-
 import com.gateway_service.common.ApiResponse;
 import com.gateway_service.config.ServiceEndpointsProperties;
-import com.gateway_service.dto.product.InventoryUpdateRequest;
-import com.gateway_service.dto.product.ProductCreationRequest;
-import com.gateway_service.dto.product.ProductResponse;
+import com.gateway_service.dto.user.UserCreationRequest;
+import com.gateway_service.dto.user.UserResponse;
+import com.gateway_service.dto.user.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -21,16 +19,16 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class ProductClient {
+public class UserClient {
 
     private final RestTemplate restTemplate;
     private final ServiceEndpointsProperties endpointsProperties;
 
-    public ProductResponse createProduct(ProductCreationRequest request, String token) {
+    public UserResponse createUser(UserCreationRequest request, String token) {
         HttpHeaders headers = defaultHeaders(token);
-        HttpEntity<ProductCreationRequest> entity = new HttpEntity<>(request, headers);
-        ResponseEntity<ApiResponse<ProductResponse>> response = restTemplate.exchange(
-                endpointsProperties.getProduct() + "/products",
+        HttpEntity<UserCreationRequest> entity = new HttpEntity<>(request, headers);
+        ResponseEntity<ApiResponse<UserResponse>> response = restTemplate.exchange(
+                endpointsProperties.getUser() + "/users",
                 HttpMethod.POST,
                 entity,
                 new ParameterizedTypeReference<>() {
@@ -39,47 +37,48 @@ public class ProductClient {
         return response.getBody() != null ? response.getBody().getResult() : null;
     }
 
-    public List<ProductResponse> getAllProducts() {
-        ResponseEntity<ApiResponse<List<ProductResponse>>> response = restTemplate.exchange(
-                endpointsProperties.getProduct() + "/products",
+    public List<UserResponse> getUsers(String token) {
+        ResponseEntity<ApiResponse<List<UserResponse>>> response = restTemplate.exchange(
+                endpointsProperties.getUser() + "/users",
                 HttpMethod.GET,
-                null,
+                new HttpEntity<>(defaultHeaders(token)),
                 new ParameterizedTypeReference<>() {
                 }
         );
         return response.getBody() != null ? response.getBody().getResult() : List.of();
     }
 
-    public ProductResponse getProductByName(String name) {
-        ResponseEntity<ApiResponse<ProductResponse>> response = restTemplate.exchange(
-                endpointsProperties.getProduct() + "/products/name/" + name,
+    public UserResponse getUserById(String userId, String token) {
+        ResponseEntity<ApiResponse<UserResponse>> response = restTemplate.exchange(
+                endpointsProperties.getUser() + "/users/" + userId,
                 HttpMethod.GET,
-                null,
+                new HttpEntity<>(defaultHeaders(token)),
                 new ParameterizedTypeReference<>() {
                 }
         );
         return response.getBody() != null ? response.getBody().getResult() : null;
     }
 
-    public ProductResponse decrementInventory(String productId, InventoryUpdateRequest request, String token) {
-        return updateInventory(productId, "decrease", request, token);
-    }
-
-    public ProductResponse incrementInventory(String productId, InventoryUpdateRequest request, String token) {
-        return updateInventory(productId, "increase", request, token);
-    }
-
-    private ProductResponse updateInventory(String productId, String action, InventoryUpdateRequest request, String token) {
+    public UserResponse updateUser(String userId, UserUpdateRequest request, String token) {
         HttpHeaders headers = defaultHeaders(token);
-        HttpEntity<InventoryUpdateRequest> entity = new HttpEntity<>(request, headers);
-        ResponseEntity<ApiResponse<ProductResponse>> response = restTemplate.exchange(
-                endpointsProperties.getProduct() + "/products/" + productId + "/inventory/" + action,
-                HttpMethod.POST,
+        HttpEntity<UserUpdateRequest> entity = new HttpEntity<>(request, headers);
+        ResponseEntity<ApiResponse<UserResponse>> response = restTemplate.exchange(
+                endpointsProperties.getUser() + "/users/" + userId,
+                HttpMethod.PUT,
                 entity,
                 new ParameterizedTypeReference<>() {
                 }
         );
         return response.getBody() != null ? response.getBody().getResult() : null;
+    }
+
+    public void deleteUser(String userId, String token) {
+        restTemplate.exchange(
+                endpointsProperties.getUser() + "/users/" + userId,
+                HttpMethod.DELETE,
+                new HttpEntity<>(defaultHeaders(token)),
+                Void.class
+        );
     }
 
     private HttpHeaders defaultHeaders(String token) {

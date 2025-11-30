@@ -3,9 +3,8 @@ package com.gateway_service.client;
 
 import com.gateway_service.common.ApiResponse;
 import com.gateway_service.config.ServiceEndpointsProperties;
-import com.gateway_service.dto.order.OrderCreationRequest;
-import com.gateway_service.dto.order.OrderResponse;
-import com.gateway_service.dto.order.OrderStatusUpdateRequest;
+import com.gateway_service.dto.table.CafeTableResponse;
+import com.gateway_service.dto.table.TableStatusUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -20,56 +19,47 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class OrderClient {
+public class TableClient {
 
     private final RestTemplate restTemplate;
     private final ServiceEndpointsProperties endpointsProperties;
 
-    public OrderResponse createOrder(OrderCreationRequest request, String token) {
+    public List<CafeTableResponse> getAllTables(String token) {
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
         if (token != null && !token.isBlank()) {
             headers.setBearerAuth(token);
         }
-        HttpEntity<OrderCreationRequest> entity = new HttpEntity<>(request, headers);
-        ResponseEntity<ApiResponse<OrderResponse>> response = restTemplate.exchange(
-                endpointsProperties.getOrder() + "/orders",
-                HttpMethod.POST,
-                entity,
-                new ParameterizedTypeReference<>() {
-                }
-        );
-        return response.getBody() != null ? response.getBody().getResult() : null;
-    }
 
-    public List<OrderResponse> getAllOrders(String token) {
-        HttpHeaders headers = new HttpHeaders();
-        if (token != null && !token.isBlank()) {
-            headers.setBearerAuth(token);
-        }
-        ResponseEntity<ApiResponse<List<OrderResponse>>> response = restTemplate.exchange(
-                endpointsProperties.getOrder() + "/orders",
+        ResponseEntity<ApiResponse<List<CafeTableResponse>>> response = restTemplate.exchange(
+                endpointsProperties.getOrder() + "/tables",
                 HttpMethod.GET,
                 new HttpEntity<>(headers),
                 new ParameterizedTypeReference<>() {
                 }
         );
+
         return response.getBody() != null ? response.getBody().getResult() : List.of();
     }
-    public OrderResponse updateStatus(String orderId, OrderStatusUpdateRequest request, String token) {
+
+    public CafeTableResponse updateTableStatus(String tableNumber, Integer status, String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         if (token != null && !token.isBlank()) {
             headers.setBearerAuth(token);
         }
-        HttpEntity<OrderStatusUpdateRequest> entity = new HttpEntity<>(request, headers);
-        ResponseEntity<ApiResponse<OrderResponse>> response = restTemplate.exchange(
-                endpointsProperties.getOrder() + "/orders/" + orderId + "/status",
+
+        TableStatusUpdateRequest request = TableStatusUpdateRequest.builder()
+                .status(status)
+                .build();
+
+        ResponseEntity<ApiResponse<CafeTableResponse>> response = restTemplate.exchange(
+                endpointsProperties.getOrder() + "/tables/" + tableNumber + "/status",
                 HttpMethod.PATCH,
-                entity,
+                new HttpEntity<>(request, headers),
                 new ParameterizedTypeReference<>() {
                 }
         );
+
         return response.getBody() != null ? response.getBody().getResult() : null;
     }
 }
