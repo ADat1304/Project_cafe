@@ -2,6 +2,7 @@ package com.gateway_service.controller;
 
 import com.gateway_service.client.OrderClient;
 import com.gateway_service.dto.esb.OrchestratedOrderResponse;
+import com.gateway_service.dto.order.DailyOrderStatsResponse;
 import com.gateway_service.dto.order.OrderCreationRequest;
 import com.gateway_service.dto.order.OrderResponse;
 import com.gateway_service.dto.order.OrderStatusUpdateRequest;
@@ -45,5 +46,13 @@ public class EsbOrderController {
     ) {
         String token = authorization.replace("Bearer ", "");
         return ResponseEntity.ok(orderClient.updateStatus(orderId, request, token));
+    }
+    @GetMapping("/daily-stats")
+    public ResponseEntity<DailyOrderStatsResponse> getDailyStats(
+            @RequestHeader(name = "Authorization") String authorization,
+            @RequestParam(value = "date", required = false) String date
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(orderClient.getDailyStats(date, token));
     }
 }

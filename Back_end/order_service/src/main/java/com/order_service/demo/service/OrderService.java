@@ -5,6 +5,7 @@ import com.order_service.demo.common.exception.ErrorCode;
 import com.order_service.demo.dto.request.OrderCreationRequest;
 import com.order_service.demo.dto.request.OrderItemRequest;
 import com.order_service.demo.dto.request.OrderStatusUpdateRequest;
+import com.order_service.demo.dto.response.DailyOrderStatsResponse;
 import com.order_service.demo.dto.response.OrderResponse;
 import com.order_service.demo.entity.CafeTable;
 import com.order_service.demo.entity.OrderDetail;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -120,5 +122,19 @@ public class OrderService {
         return orderRepository.findAll().stream()
                 .map(orderMapper::toOrderResponse)
                 .collect(Collectors.toList());
+    }
+    public DailyOrderStatsResponse getDailyStats(LocalDate date) {
+        LocalDate targetDate = date != null ? date : LocalDate.now();
+        LocalDateTime startOfDay = targetDate.atStartOfDay();
+        LocalDateTime startOfNextDay = targetDate.plusDays(1).atStartOfDay();
+
+        BigDecimal totalAmount = orderRepository.sumTotalAmountByOrderDateBetween(startOfDay, startOfNextDay);
+        long orderCount = orderRepository.countByOrderDateBetween(startOfDay, startOfNextDay);
+
+        return DailyOrderStatsResponse.builder()
+                .date(targetDate)
+                .totalAmount(totalAmount)
+                .orderCount(orderCount)
+                .build();
     }
 }

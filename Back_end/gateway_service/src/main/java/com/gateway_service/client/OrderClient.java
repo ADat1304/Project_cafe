@@ -3,6 +3,7 @@ package com.gateway_service.client;
 
 import com.gateway_service.common.ApiResponse;
 import com.gateway_service.config.ServiceEndpointsProperties;
+import com.gateway_service.dto.order.DailyOrderStatsResponse;
 import com.gateway_service.dto.order.OrderCreationRequest;
 import com.gateway_service.dto.order.OrderResponse;
 import com.gateway_service.dto.order.OrderStatusUpdateRequest;
@@ -15,8 +16,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -67,6 +70,27 @@ public class OrderClient {
                 endpointsProperties.getOrder() + "/orders/" + orderId + "/status",
                 HttpMethod.PATCH,
                 entity,
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        return response.getBody() != null ? response.getBody().getResult() : null;
+    }
+
+    public DailyOrderStatsResponse getDailyStats(String date, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null && !token.isBlank()) {
+            headers.setBearerAuth(token);
+        }
+
+        String url = UriComponentsBuilder
+                .fromHttpUrl(endpointsProperties.getOrder() + "/orders/daily-stats")
+                .queryParamIfPresent("date", date == null || date.isBlank() ? Optional.empty() : Optional.of(date))
+                .toUriString();
+
+        ResponseEntity<ApiResponse<DailyOrderStatsResponse>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
                 new ParameterizedTypeReference<>() {
                 }
         );

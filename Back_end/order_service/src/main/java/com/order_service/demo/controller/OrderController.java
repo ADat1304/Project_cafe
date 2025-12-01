@@ -3,15 +3,18 @@ package com.order_service.demo.controller;
 import com.order_service.demo.common.ApiResponse;
 import com.order_service.demo.dto.request.OrderCreationRequest;
 import com.order_service.demo.dto.request.OrderStatusUpdateRequest;
+import com.order_service.demo.dto.response.DailyOrderStatsResponse;
 import com.order_service.demo.dto.response.OrderResponse;
 import com.order_service.demo.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -43,6 +46,15 @@ public class OrderController {
         List<OrderResponse> orders = orderService.getAllOrders();
         return ApiResponse.<List<OrderResponse>>builder()
                 .result(orders)
+                .build();
+    }
+    @GetMapping("/daily-stats")
+    public ApiResponse<DailyOrderStatsResponse> getDailyStats(
+            @RequestParam(value = "date", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        DailyOrderStatsResponse stats = orderService.getDailyStats(date);
+        return ApiResponse.<DailyOrderStatsResponse>builder()
+                .result(stats)
                 .build();
     }
 }

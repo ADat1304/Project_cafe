@@ -135,5 +135,9 @@ export const updateOrderStatus = (orderId, status, token) => {
         token,
     });
 };
+export const fetchDailyOrderStats = (date, token) => {
+    const params = date ? `?date=${encodeURIComponent(date)}` : "";
+    return requestGateway(`${ESB_PREFIX}/orders/daily-stats${params}`, { token });
+};
 
 export { GATEWAY_BASE_URL, requestGateway };

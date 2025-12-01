@@ -39,14 +39,26 @@ export default function SalesPage() {
     const [closingOrderId, setClosingOrderId] = useState(null);
     const [updatingTable, setUpdatingTable] = useState(false);
 
+    const sortOrdersByDate = (items) => {
+        if (!Array.isArray(items)) return [];
+        return [...items].sort((a, b) => {
+            const dateA = new Date(a.orderDate || 0).getTime();
+            const dateB = new Date(b.orderDate || 0).getTime();
+            return dateB - dateA;
+        });
+    };
     const loadOrders = async () => {
         setLoadingOrders(true);
         setOrderError("");
         try {
             const data = await fetchOrders(token);
-            setOrders(Array.isArray(data) ? data : []);
-            if (!selectedOrderId && Array.isArray(data) && data.length) {
-                setSelectedOrderId(data[0].orderId);
+            const sorted = sortOrdersByDate(data);
+            setOrders(sorted);
+
+            const hasExistingSelection = sorted.some((order) => order.orderId === selectedOrderId);
+
+            if (!hasExistingSelection && sorted.length) {
+                setSelectedOrderId(sorted[0].orderId);
             }
         } catch (err) {
             setOrderError(err.message || "Không thể tải danh sách hóa đơn");
@@ -133,6 +145,10 @@ export default function SalesPage() {
         const tableRef = selectedOrder?.tableNumber ?? selectedOrder?.tableId;
         if (!tableRef) {
             setActionError("Hóa đơn chưa có thông tin bàn");
+            return;
+        }
+        if (selectedOrder?.status?.toUpperCase() === "CLOSE") {
+            setActionError("Hóa đơn đã ở trạng thái CLOSE và không thể mở lại");
             return;
         }
 
@@ -363,7 +379,11 @@ export default function SalesPage() {
                                                 className="btn btn-outline-secondary w-100"
                                                 type="button"
                                                 onClick={handleMarkTableBusy}
-                                                disabled={updatingTable || !selectedOrder.tableNumber}
+                                                disabled={
+                                                    updatingTable ||
+                                                    !selectedOrder.tableNumber ||
+                                                    selectedOrder.status?.toUpperCase() === "CLOSE"
+                                                }
                                             >
                                                 {updatingTable ? "Đang cập nhật..." : "Thành công (Bàn bận)"}
                                             </button>
