@@ -130,15 +130,17 @@ export default function SalesPage() {
         setActionError("");
         setActionMessage("");
 
-        if (!selectedOrder?.tableNumber) {
+        const tableRef = selectedOrder?.tableNumber ?? selectedOrder?.tableId;
+        if (!tableRef) {
             setActionError("Hóa đơn chưa có thông tin bàn");
             return;
         }
 
         setUpdatingTable(true);
         try {
-            await updateTableStatus(selectedOrder.tableNumber, 1, token);
-            setActionMessage(`Cập nhật bàn ${selectedOrder.tableNumber} sang trạng thái bận thành công`);
+            await updateOrderStatus(selectedOrder.orderId, "OPEN", token);
+            await updateTableStatus(tableRef, 1, token);
+            setActionMessage(`Đã cập nhật hóa đơn sang OPEN và bàn ${tableRef} sang trạng thái bận`);
             await loadOrders();
         } catch (err) {
             setActionError(err.message || "Không thể cập nhật trạng thái bàn");
@@ -151,14 +153,13 @@ export default function SalesPage() {
         setActionError("");
         setActionMessage("");
         setClosingOrderId(order.orderId);
+        const tableRef = order.tableNumber ?? order.tableId;
         try {
             await updateOrderStatus(order.orderId, "CLOSE", token);
-
-            if (order.tableNumber) {
-                await updateTableStatus(order.tableNumber, 0, token);
+            if (tableRef) {
+                await updateTableStatus(tableRef, 0, token);
             }
-
-            setActionMessage(`Đã chuyển hóa đơn ${order.orderId} sang trạng thái CLOSE`);
+            setActionMessage(`Đã chuyển hóa đơn ${order.orderId} sang trạng thái CLOSE, Giải phóng bàn`);
             await loadOrders();
         } catch (err) {
             setActionError(err.message || "Không thể cập nhật trạng thái hóa đơn");

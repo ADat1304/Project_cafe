@@ -120,8 +120,20 @@ export const createOrder = (data, token) =>
     requestGateway(`${ESB_PREFIX}/orders`, { method: "POST", body: data, token });
 
 export const fetchOrders = (token) => requestGateway(`${ESB_PREFIX}/orders`, { token });
-export const updateOrderStatus = (orderId, status, token) =>
-    requestGateway(`${ESB_PREFIX}/orders/${orderId}/status`, { method: "PATCH", body: { status }, token });
+export const updateOrderStatus = (orderId, status, token) => {
+    const normalizedStatus = typeof status === "string"
+        ? status.trim().toUpperCase()
+        : String(status ?? "").trim().toUpperCase();
 
+    if (!normalizedStatus) {
+        throw new Error("Trạng thái đơn hàng không hợp lệ");
+    }
+
+    return requestGateway(`${ESB_PREFIX}/orders/${orderId}/status`, {
+        method: "PATCH",
+        body: { status: normalizedStatus },
+        token,
+    });
+};
 
 export { GATEWAY_BASE_URL, requestGateway };

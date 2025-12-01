@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -16,7 +17,8 @@ import java.math.BigDecimal;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class ProductCreationRequest {
     String productName;
-    String description;
     BigDecimal price;
-    Integer quantity;
+    Integer amount;
+    String categoryName;
+    List<String> images;
 }
