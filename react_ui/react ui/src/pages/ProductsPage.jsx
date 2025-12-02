@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import { createProduct, fetchProducts } from "../utils/api.js";
-import { getAuth } from "../utils/auth.js";
+import { getAuth,getScopesFromToken } from "../utils/auth.js";
 
 const formatCurrency = (value) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(value || 0));
@@ -22,6 +22,8 @@ export default function ProductsPage() {
         images: "",
     });
     const token = useMemo(() => getAuth()?.token, []);
+    const scopes = useMemo(() => getScopesFromToken(token), [token]);
+    const canCreateProduct = scopes.length > 0;
 
     const loadProducts = async () => {
         setLoading(true);
@@ -82,20 +84,22 @@ export default function ProductsPage() {
                             <span className="bi bi-arrow-clockwise me-1"></span>
                             Làm mới
                         </button>
-                        <button
-                            className="btn btn-success btn-sm"
-                            type="submit"
-                            form="create-product-form"
-                            disabled={creating}
-                        >
-                            {creating ? "Đang lưu..." : "+ Thêm sản phẩm"}
-                        </button>
+                        {canCreateProduct && (
+                            <button
+                                className="btn btn-success btn-sm"
+                                type="submit"
+                                form="create-product-form"
+                                disabled={creating}
+                            >
+                                {creating ? "Đang lưu..." : "+ Thêm sản phẩm"}
+                            </button>
+                        )}
                     </div>
                 }
             />
 
             <div className="row g-3">
-                <div className="col-lg-8">
+                <div className={canCreateProduct ? "col-lg-8" : "col-12"}>
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
                             {error && (
@@ -134,90 +138,92 @@ export default function ProductsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="col-lg-4">
-                    <div className="card shadow-sm border-0 h-100">
-                        <div className="card-body">
-                            <h6 className="mb-2">Thêm sản phẩm mới</h6>
-                            <p className="text-muted small mb-3">Gửi yêu cầu lên API gateway để tạo món mới.</p>
-                            {createError && (
-                                <div className="alert alert-danger py-2 small" role="alert">
-                                    {createError}
-                                </div>
-                            )}
-                            {createSuccess && (
-                                <div className="alert alert-success py-2 small" role="alert">
-                                    {createSuccess}
-                                </div>
-                            )}
-                            <form id="create-product-form" className="small" onSubmit={handleCreate}>
-                                <div className="mb-2">
-                                    <label className="form-label">Tên sản phẩm</label>
-                                    <input
-                                        type="text"
-                                        className="form-control form-control-sm"
-                                        name="productName"
-                                        value={form.productName}
-                                        onChange={handleChange}
-                                        required
-                                        placeholder="VD: Cà phê sữa đá"
-                                    />
-                                </div>
-                                <div className="row g-2">
-                                    <div className="col-6">
-                                        <label className="form-label">Giá bán (VND)</label>
+                {canCreateProduct && (
+                    <div className="col-lg-4">
+                        <div className="card shadow-sm border-0 h-100">
+                            <div className="card-body">
+                                <h6 className="mb-2">Thêm sản phẩm mới</h6>
+                                <p className="text-muted small mb-3">Gửi yêu cầu lên API gateway để tạo món mới.</p>
+                                {createError && (
+                                    <div className="alert alert-danger py-2 small" role="alert">
+                                        {createError}
+                                    </div>
+                                )}
+                                {createSuccess && (
+                                    <div className="alert alert-success py-2 small" role="alert">
+                                        {createSuccess}
+                                    </div>
+                                )}
+                                <form id="create-product-form" className="small" onSubmit={handleCreate}>
+                                    <div className="mb-2">
+                                        <label className="form-label">Tên sản phẩm</label>
                                         <input
-                                            type="number"
-                                            min="0"
+                                            type="text"
                                             className="form-control form-control-sm"
-                                            name="price"
-                                            value={form.price}
+                                            name="productName"
+                                            value={form.productName}
                                             onChange={handleChange}
                                             required
+                                            placeholder="VD: Cà phê sữa đá"
                                         />
                                     </div>
-                                    <div className="col-6">
-                                        <label className="form-label">Tồn kho</label>
+                                    <div className="row g-2">
+                                        <div className="col-6">
+                                            <label className="form-label">Giá bán (VND)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                className="form-control form-control-sm"
+                                                name="price"
+                                                value={form.price}
+                                                onChange={handleChange}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="col-6">
+                                            <label className="form-label">Tồn kho</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                className="form-control form-control-sm"
+                                                name="amount"
+                                                value={form.amount}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 mb-2">
+                                        <label className="form-label">Danh mục</label>
                                         <input
-                                            type="number"
-                                            min="0"
+                                            type="text"
                                             className="form-control form-control-sm"
-                                            name="amount"
-                                            value={form.amount}
+                                            name="categoryName"
+                                            value={form.categoryName}
                                             onChange={handleChange}
+                                            placeholder="Trà, cà phê, sinh tố..."
                                         />
                                     </div>
-                                </div>
-                                <div className="mt-2 mb-2">
-                                    <label className="form-label">Danh mục</label>
-                                    <input
-                                        type="text"
-                                        className="form-control form-control-sm"
-                                        name="categoryName"
-                                        value={form.categoryName}
-                                        onChange={handleChange}
-                                        placeholder="Trà, cà phê, sinh tố..."
-                                    />
-                                </div>
-                                <div className="mb-3">
-                                    <label className="form-label">Ảnh (nhiều URL, cách nhau bởi dấu phẩy)</label>
-                                    <input
-                                        type="text"
-                                        className="form-control form-control-sm"
-                                        name="images"
-                                        value={form.images}
-                                        onChange={handleChange}
-                                        placeholder="https://... , https://..."
-                                    />
-                                </div>
-                                <div className="d-grid">
-                                    <button className="btn btn-success btn-sm" type="submit" disabled={creating}>
-                                        {creating ? "Đang lưu..." : "Lưu sản phẩm"}
-                                    </button>
-                                </div>
-                            </form>
+                                    <div className="mb-3">
+                                        <label className="form-label">Ảnh (nhiều URL, cách nhau bởi dấu phẩy)</label>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm"
+                                            name="images"
+                                            value={form.images}
+                                            onChange={handleChange}
+                                            placeholder="https://... , https://..."
+                                        />
+                                    </div>
+                                    <div className="d-grid">
+                                        <button className="btn btn-success btn-sm" type="submit" disabled={creating}>
+                                            {creating ? "Đang lưu..." : "Lưu sản phẩm"}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
+                )}
             </div>
         </div>
     );

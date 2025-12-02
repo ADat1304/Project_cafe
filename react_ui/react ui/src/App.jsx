@@ -8,6 +8,7 @@ import DashboardPage from "./pages/Dashboard.jsx";
 import LoginPage from "./pages/LoginPage.jsx";
 import ProductsPage from "./pages/ProductsPage.jsx";
 import SalesPage from "./pages/SalesPage.jsx";
+import EmployeesPage from "./pages/EmployeesPage.jsx";
 
 export default function App() {
     return (
@@ -22,6 +23,7 @@ export default function App() {
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/sales" element={<SalesPage />} />
                     <Route path="/products" element={<ProductsPage />} />
+                    <Route path="/employees" element={<EmployeesPage />} />
                     {/* sau này thêm: statistics, invoices, employees... */}
                 </Route>
             </Route>

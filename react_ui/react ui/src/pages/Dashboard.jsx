@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
-import {fetchDailyOrderStats, fetchTables } from "../utils/api.js";
+import {fetchDailyOrderStats,fetchProducts, fetchTables } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
 
 
@@ -168,7 +168,9 @@ export default function DashboardPage() {
     const [loadingDailyStats, setLoadingDailyStats] = useState(false);
     const [dailyStatsError, setDailyStatsError] = useState("");
     const [todayStats, setTodayStats] = useState({ value: 0, count: 0 });
-
+    const [products, setProducts] = useState([]);
+    const [productError, setProductError] = useState("");
+    const [loadingProducts, setLoadingProducts] = useState(false);
     const loadTables = async () => {
         setLoadingTables(true);
         setTableError("");
@@ -224,14 +226,34 @@ export default function DashboardPage() {
             setLoadingDailyStats(false);
         }
     };
+
+    const loadProducts = async () => {
+        setLoadingProducts(true);
+        setProductError("");
+
+        try {
+            const data = await fetchProducts(token);
+            setProducts(Array.isArray(data) ? data : []);
+        } catch (err) {
+            setProductError(err.message || "Không thể tải danh sách sản phẩm");
+            setProducts([]);
+        } finally {
+            setLoadingProducts(false);
+        }
+    };
     useEffect(() => {
         loadTables();
         loadDailyStats();
+        loadProducts()
     }, [token]);
 
     const todaysOrderCount = todayStats.count;
     const totalRevenue = todayStats.value;
     const busyTables = tables.filter((table) => table.status === 1).length;
+    const topProducts = products
+        .slice()
+        .sort((a, b) => Number(b.amount ?? 0) - Number(a.amount ?? 0))
+        .slice(0, 4);
 
     const getBadgeClassByStatus = (status) => {
         if (status === 1) return "bg-secondary-subtle text-secondary";
@@ -327,17 +349,25 @@ export default function DashboardPage() {
                     <div className="card shadow-sm border-0 mb-3">
                         <div className="card-body">
                             <h6 className="mb-2">Top sản phẩm bán chạy</h6>
-                            <ul className="list-group list-group-flush small">
-                                <li className="list-group-item d-flex justify-content-between">
-                                    <span>Trà sữa matcha</span> <span className="fw-semibold">32 ly</span>
-                                </li>
-                                <li className="list-group-item d-flex justify-content-between">
-                                    <span>Cà phê sữa đá</span> <span className="fw-semibold">25 ly</span>
-                                </li>
-                                <li className="list-group-item d-flex justify-content-between">
-                                    <span>Latte caramel</span> <span className="fw-semibold">19 ly</span>
-                                </li>
-                            </ul>
+                            {productError && (
+                                <div className="alert alert-danger py-2 small" role="alert">
+                                    {productError}
+                                </div>
+                            )}
+                            {loadingProducts ? (
+                                <div className="text-muted small">Đang tải sản phẩm...</div>
+                            ) : topProducts.length === 0 ? (
+                                <div className="text-muted small">Chưa có dữ liệu sản phẩm</div>
+                            ) : (
+                                <ul className="list-group list-group-flush small">
+                                    {topProducts.map((product) => (
+                                        <li className="list-group-item d-flex justify-content-between" key={product.productID}>
+                                            <span>{product.productName || "Sản phẩm"}</span>
+                                            <span className="fw-semibold">{Number(product.amount ?? 0)} món</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                         </div>
                     </div>
 

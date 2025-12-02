@@ -4,7 +4,8 @@ package com.example.user_service.controller;
 import com.example.user_service.common.ApiResponse;
 import com.example.user_service.dto.request.UserCreationRequest;
 import com.example.user_service.dto.request.UserUpdateRequest;
-import com.example.user_service.dto.response.UserReponse;
+
+import com.example.user_service.dto.response.UserResponse;
 import com.example.user_service.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -27,14 +28,14 @@ public class UserController {
 
 
     @PostMapping
-    ApiResponse<UserReponse> createUser(@RequestBody @Valid UserCreationRequest request){
-        return ApiResponse.<UserReponse>builder()
+    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request){
+        return ApiResponse.<UserResponse>builder()
                 .result(userService.createUser(request))
                 .build();
     }
 
     @GetMapping
-    ApiResponse<List<UserReponse>> getUsers(){
+    ApiResponse<List<UserResponse>> getUsers(){
 
         var authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -42,13 +43,13 @@ public class UserController {
         authentication.getAuthorities().forEach(
                 grantedAuthority -> log.info(grantedAuthority.getAuthority()));
 
-        return ApiResponse.<List<UserReponse>>builder()
+        return ApiResponse.<List<UserResponse>>builder()
                 .result(userService.getUsers())
                 .build();
     }
 
     @GetMapping("/{userId}")
-    UserReponse getUserId(@PathVariable("userId") String userId){
+    UserResponse getUserId(@PathVariable("userId") String userId){
         return userService.getUserId(userId);
     }
 
@@ -59,7 +60,7 @@ public class UserController {
     }
 
     @PutMapping("/{userId}")
-    UserReponse updateUser(@PathVariable String userId,@RequestBody UserUpdateRequest request) {
+    UserResponse updateUser(@PathVariable String userId,@RequestBody UserUpdateRequest request) {
         return userService.updateUser(userId,request);
     }
 }

@@ -45,9 +45,9 @@ export default function Sidebar() {
                 {/*<NavLink to="/invoices" className={menuItemClass}>*/}
                 {/*    <span className="me-2 bi bi-receipt" /> Hóa đơn*/}
                 {/*</NavLink>*/}
-                {/*<NavLink to="/employees" className={menuItemClass}>*/}
-                {/*    <span className="me-2 bi bi-people" /> Nhân viên*/}
-                {/*</NavLink>*/}
+                <NavLink to="/employees" className={menuItemClass}>
+                    <span className="me-2 bi bi-people" /> Nhân viên
+                </NavLink>
             </nav>
         </aside>
     );
