@@ -29,6 +29,10 @@ public class EsbProductController {
     public ResponseEntity<List<ProductResponse>> listProducts() {
         return ResponseEntity.ok(productClient.getAllProducts());
     }
+    @GetMapping("/category/{categoryName}")
+    public ResponseEntity<List<ProductResponse>> getByCategory(@PathVariable String categoryName) {
+        return ResponseEntity.ok(productClient.getProductsByCategory(categoryName));
+    }
 
     @GetMapping("/name/{name}")
     public ResponseEntity<ProductResponse> getByName(@PathVariable String name) {

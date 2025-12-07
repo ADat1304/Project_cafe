@@ -106,6 +106,11 @@ export const decrementProductInventory = (productId, data, token) =>
         body: data,
         token,
     });
+export const fetchProductsByCategory = (categoryName, token) => {
+    const categoryPath = encodeURIComponent(categoryName || "all");
+    return requestGateway(`${ESB_PREFIX}/products/category/${categoryPath}`, { token });
+};
+
 
 // ===== Tables =====
 export const fetchTables = (token) => requestGateway(`${ESB_PREFIX}/tables`, { token });

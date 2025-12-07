@@ -80,4 +80,14 @@ public class ProductService {
         product.setAmount(product.getAmount() + request.getQuantity());
         return productMapper.toProductResponse(productRepository.save(product));
     }
+    public List<ProductResponse> getProductsByCategory(String categoryName) {
+        if (Objects.isNull(categoryName) || categoryName.isBlank() || categoryName.equalsIgnoreCase("all")) {
+            return getAllProducts();
+        }
+
+        return productRepository.findByCategory_CategoryNameIgnoreCase(categoryName)
+                .stream()
+                .map(productMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
 }

@@ -1,9 +1,10 @@
+html {
+    overflow-y: scroll;        /* luôn hiển thị “rãnh” scrollbar */
+}
+
+/* Không bắt buộc nhưng nên có để full screen */
 html,
 body,
 #root {
-    min-height: 100%;
-}
-
-body {
-    margin: 0;
+    height: 100%;
 }

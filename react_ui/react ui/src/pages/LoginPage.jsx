@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { authenticate, fetchUserById } from "../utils/api.js";
 import { saveAuth, isAuthenticated } from "../utils/auth.js";
+import LoginBackground from "../assets/Login_background.png";
 
 
 export default function LoginPage() {
@@ -78,7 +79,7 @@ export default function LoginPage() {
                 {/* Hình minh họa bên trái */}
                 <div className="col-md-6 d-none d-md-flex flex-column justify-content-center">
 
-                    <img src="./../assets/Login_background.png" alt="background"/>
+                    <img src={LoginBackground} alt="background" className="img-fluid" />
                 </div>
 
                 {/* Form login bên phải */}

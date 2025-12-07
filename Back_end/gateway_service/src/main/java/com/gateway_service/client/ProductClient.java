@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Component
@@ -89,5 +91,16 @@ public class ProductClient {
             headers.setBearerAuth(token);
         }
         return headers;
+    }
+    public List<ProductResponse> getProductsByCategory(String categoryName) {
+        String encodedCategory = URLEncoder.encode(categoryName, StandardCharsets.UTF_8);
+        ResponseEntity<ApiResponse<List<ProductResponse>>> response = restTemplate.exchange(
+                endpointsProperties.getProduct() + "/products/category/" + encodedCategory,
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        return response.getBody() != null ? response.getBody().getResult() : List.of();
     }
 }

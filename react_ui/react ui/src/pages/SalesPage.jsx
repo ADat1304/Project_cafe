@@ -1,7 +1,7 @@
 // src/pages/SalesPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
-import {createOrder, fetchOrders, fetchProducts, updateOrderStatus, updateTableStatus } from "../utils/api.js";
+import {createOrder, fetchOrders, fetchProductsByCategory, updateOrderStatus, updateTableStatus } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
 
 const formatCurrency = (value) =>
@@ -25,6 +25,8 @@ export default function SalesPage() {
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
     const [orderError, setOrderError] = useState("");
+    const [categories, setCategories] = useState(["all"]);
+    const [selectedCategory, setSelectedCategory] = useState("all");
     const [productError, setProductError] = useState("");
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -47,7 +49,7 @@ export default function SalesPage() {
             return dateB - dateA;
         });
     };
-    const loadOrders = async () => {
+    const loadOrders = async (categoryName = selectedCategory) => {
         setLoadingOrders(true);
         setOrderError("");
         try {
@@ -67,12 +69,21 @@ export default function SalesPage() {
         }
     };
 
-    const loadProducts = async () => {
+    const loadProducts = async (categoryName = selectedCategory) => {
         setLoadingProducts(true);
         setProductError("");
         try {
-            const data = await fetchProducts(token);
-            setProducts(Array.isArray(data) ? data : []);
+            const normalizedCategory = categoryName || "all";
+            const data = await fetchProductsByCategory(normalizedCategory, token);
+            const productList = Array.isArray(data) ? data : [];
+            setProducts(productList);
+
+            if (normalizedCategory === "all") {
+                const uniqueCategories = Array.from(
+                    new Set(productList.map((item) => item.categoryName).filter(Boolean)),
+                );
+                setCategories(["all", ...uniqueCategories]);
+            }
         } catch (err) {
             setProductError(err.message || "Không thể tải danh sách sản phẩm");
         } finally {
@@ -82,8 +93,13 @@ export default function SalesPage() {
 
     useEffect(() => {
         loadOrders();
-        loadProducts();
+        loadProducts("all");
     }, [token]);
+
+    const handleCategoryChange = (categoryName) => {
+        setSelectedCategory(categoryName);
+        loadProducts(categoryName);
+    };
 
     const selectedOrder =
         orders.find((order) => order.orderId === selectedOrderId) || (orders.length ? orders[0] : null);
@@ -286,6 +302,24 @@ export default function SalesPage() {
                                 <div className="text-muted small">Chưa có sản phẩm</div>
                             ) : (
                                 <div className="row g-2">
+                                    <div className="col-12 mb-2">
+                                        <div className="d-flex flex-wrap gap-2">
+                                            {categories.map((category) => (
+                                                <button
+                                                    key={category}
+                                                    className={`btn btn-sm ${
+                                                        selectedCategory === category
+                                                            ? "btn-success"
+                                                            : "btn-outline-secondary"
+                                                    }`}
+                                                    onClick={() => handleCategoryChange(category)}
+                                                    disabled={loadingProducts}
+                                                >
+                                                    {category === "all" ? "Tất cả" : category}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                     {products.map((p) => (
                                         <div className="col-12" key={p.productID}>
                                             <div className="border rounded-3 p-2">
@@ -457,9 +491,8 @@ export default function SalesPage() {
                                                         setOrderForm((prev) => ({ ...prev, paymentMethodType: e.target.value }))
                                                     }
                                                 >
-                                                    <option value="CASH">Tiền mặt</option>
-                                                    <option value="CARD">Thẻ</option>
-                                                    <option value="TRANSFER">Chuyển khoản</option>
+                                                    <option value="Cash">Tiền mặt</option>
+                                                    <option value="Pay card">Thẻ</option>
                                                 </select>
                                             </div>
                                         </div>
