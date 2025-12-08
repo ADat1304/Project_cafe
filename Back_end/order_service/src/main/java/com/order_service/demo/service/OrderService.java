@@ -7,6 +7,7 @@ import com.order_service.demo.dto.request.OrderItemRequest;
 import com.order_service.demo.dto.request.OrderStatusUpdateRequest;
 import com.order_service.demo.dto.response.DailyOrderStatsResponse;
 import com.order_service.demo.dto.response.OrderResponse;
+import com.order_service.demo.dto.response.TopProductResponse;
 import com.order_service.demo.entity.CafeTable;
 import com.order_service.demo.entity.OrderDetail;
 import com.order_service.demo.entity.Orders;
@@ -20,6 +21,7 @@ import com.order_service.demo.repository.PaymentMethodRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -142,5 +144,15 @@ public class OrderService {
     }
     public List<PaymentMethod> getAllPaymentMethods() {
         return paymentMethodRepository.findAll();
+    }
+    public List<TopProductResponse> getTopSellingProducts(int limit) {
+        return orderRepository.findTopSellingProducts(PageRequest.of(0, limit));
+    }
+
+    // Bổ sung hàm lấy doanh thu theo khoảng thời gian (Optional)
+    public BigDecimal getRevenueBetween(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.plusDays(1).atStartOfDay();
+        return orderRepository.sumTotalAmountByOrderDateBetween(start, end);
     }
 }

@@ -3,10 +3,7 @@ package com.gateway_service.client;
 
 import com.gateway_service.common.ApiResponse;
 import com.gateway_service.config.ServiceEndpointsProperties;
-import com.gateway_service.dto.order.DailyOrderStatsResponse;
-import com.gateway_service.dto.order.OrderCreationRequest;
-import com.gateway_service.dto.order.OrderResponse;
-import com.gateway_service.dto.order.OrderStatusUpdateRequest;
+import com.gateway_service.dto.order.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -18,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -108,5 +106,45 @@ public class OrderClient {
                 new ParameterizedTypeReference<>() {}
         );
         return response.getBody() != null ? response.getBody().getResult() : List.of();
+    }
+    public List<TopProductResponse> getTopSelling(int limit, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null && !token.isBlank()) {
+            headers.setBearerAuth(token);
+        }
+
+        String url = UriComponentsBuilder
+                .fromHttpUrl(endpointsProperties.getOrder() + "/orders/top-selling")
+                .queryParam("limit", limit)
+                .toUriString();
+
+        ResponseEntity<ApiResponse<List<TopProductResponse>>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                new ParameterizedTypeReference<>() {}
+        );
+        return response.getBody() != null ? response.getBody().getResult() : List.of();
+    }
+
+    public BigDecimal getRevenue(String startDate, String endDate, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null && !token.isBlank()) {
+            headers.setBearerAuth(token);
+        }
+
+        String url = UriComponentsBuilder
+                .fromHttpUrl(endpointsProperties.getOrder() + "/orders/revenue")
+                .queryParam("startDate", startDate)
+                .queryParam("endDate", endDate)
+                .toUriString();
+
+        ResponseEntity<ApiResponse<BigDecimal>> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                new ParameterizedTypeReference<>() {}
+        );
+        return response.getBody() != null ? response.getBody().getResult() : BigDecimal.ZERO;
     }
 }

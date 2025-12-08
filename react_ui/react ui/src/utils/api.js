@@ -160,3 +160,6 @@ export const deleteProduct = (productId, token) =>
 
  export const fetchPaymentMethods = (token) =>
      requestGateway(`${ESB_PREFIX}/orders/payment-methods`, { token });
+ export const fetchTopSellingProducts = (limit, token) => {
+         return requestGateway(`${ESB_PREFIX}/orders/top-selling?limit=${limit}`, { token });
+     };

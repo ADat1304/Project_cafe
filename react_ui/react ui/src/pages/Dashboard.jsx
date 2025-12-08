@@ -2,12 +2,14 @@
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
-import { fetchDailyOrderStats, fetchProducts, fetchTables } from "../utils/api.js";
+// [CẬP NHẬT] Import thêm fetchTopSellingProducts, bỏ fetchProducts
+import { fetchDailyOrderStats, fetchTables, fetchTopSellingProducts } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
 
 const formatCurrency = (value) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(value || 0));
 
+// ... (Giữ nguyên component DailyRevenueBarChart) ...
 const DailyRevenueBarChart = ({ data }) => {
     const maxValue = Math.max(...data.map((d) => d.value), 1);
     const svgHeight = 260;
@@ -24,8 +26,8 @@ const DailyRevenueBarChart = ({ data }) => {
     return (
         <div className="bg-light rounded p-3">
             <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="fw-semibold small">Bar Charts</span>
-                <span className="text-muted small">Doanh số từng ngày</span>
+                <span className="fw-semibold small">Biểu đồ doanh thu</span>
+                <span className="text-muted small">7 ngày gần nhất</span>
             </div>
             <div className="position-relative" style={{ minHeight: svgHeight }}>
                 <svg width="100%" height={svgHeight} viewBox={`0 0 ${svgWidth} ${svgHeight}`} preserveAspectRatio="none">
@@ -67,23 +69,24 @@ export default function DashboardPage() {
     const token = useMemo(() => auth?.token, [auth]);
     const [tables, setTables] = useState([]);
     const [loadingTables, setLoadingTables] = useState(false);
-    const [tableError, setTableError] = useState("");
+
     const [dailyStats, setDailyStats] = useState([]);
     const [loadingDailyStats, setLoadingDailyStats] = useState(false);
     const [dailyStatsError, setDailyStatsError] = useState("");
+
     const [todayStats, setTodayStats] = useState({ value: 0, count: 0 });
-    const [products, setProducts] = useState([]);
-    const [productError, setProductError] = useState("");
-    const [loadingProducts, setLoadingProducts] = useState(false);
+
+    // [CẬP NHẬT] State cho Top Selling
+    const [topProducts, setTopProducts] = useState([]);
+    const [loadingTopProducts, setLoadingTopProducts] = useState(false);
 
     const loadTables = async () => {
         setLoadingTables(true);
-        setTableError("");
         try {
             const data = await fetchTables(token);
             setTables(Array.isArray(data) ? data : []);
         } catch (err) {
-            setTableError(err.message || "Không thể tải danh sách bàn");
+            console.error(err);
         } finally {
             setLoadingTables(false);
         }
@@ -94,6 +97,8 @@ export default function DashboardPage() {
         setDailyStatsError("");
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+
+        // Tạo mảng 7 ngày gần nhất
         const dates = Array.from({ length: 7 }, (_, idx) => {
             const date = new Date(today);
             date.setDate(today.getDate() - (6 - idx));
@@ -104,6 +109,7 @@ export default function DashboardPage() {
             const stats = await Promise.all(
                 dates.map(async (date) => {
                     const iso = date.toISOString().slice(0, 10);
+                    // Gọi API lấy doanh thu từng ngày
                     const response = await fetchDailyOrderStats(iso, token);
                     return {
                         key: iso,
@@ -114,64 +120,59 @@ export default function DashboardPage() {
                 })
             );
             setDailyStats(stats);
+            // Lấy stats của ngày cuối cùng (hôm nay) để hiển thị lên thẻ
             const latest = stats[stats.length - 1] || { value: 0, count: 0 };
             setTodayStats({ value: latest.value, count: latest.count });
         } catch (err) {
-            setDailyStatsError(err.message || "Không thể tải thống kê doanh thu");
+            setDailyStatsError("Không thể tải thống kê doanh thu");
             setDailyStats([]);
         } finally {
             setLoadingDailyStats(false);
         }
     };
 
-    const loadProducts = async () => {
-        setLoadingProducts(true);
-        setProductError("");
+    // [CẬP NHẬT] Hàm load top products từ Server
+    const loadTopProducts = async () => {
+        setLoadingTopProducts(true);
         try {
-            const data = await fetchProducts(token);
-            setProducts(Array.isArray(data) ? data : []);
+            const data = await fetchTopSellingProducts(5, token); // Lấy top 5
+            setTopProducts(Array.isArray(data) ? data : []);
         } catch (err) {
-            setProductError(err.message || "Không thể tải danh sách sản phẩm");
+            console.error("Lỗi tải top sản phẩm:", err);
         } finally {
-            setLoadingProducts(false);
+            setLoadingTopProducts(false);
         }
     };
 
     useEffect(() => {
-        loadTables();
-        loadDailyStats();
-        loadProducts();
+        if(token) {
+            loadTables();
+            loadDailyStats();
+            loadTopProducts(); // Gọi hàm mới
+        }
     }, [token]);
 
-    const todaysOrderCount = todayStats.count;
     const totalRevenue = todayStats.value;
+    const todaysOrderCount = todayStats.count;
     const busyTables = tables.filter((table) => table.status === 1).length;
-    const topProducts = products.slice().sort((a, b) => Number(b.amount ?? 0) - Number(a.amount ?? 0)).slice(0, 4);
 
     const getBadgeClassByStatus = (status) => status === 1 ? "bg-secondary-subtle text-secondary" : status === 0 ? "bg-success-subtle text-success" : "bg-warning-subtle text-warning";
-    const getStatusLabel = (status) => status === 1 ? "Đang bận" : status === 0 ? "Trống" : "Không rõ";
-
-    // Logic lấy vai trò hiển thị
-    const roleLabel = (Array.isArray(auth?.user?.roles) && auth.user.roles.length
-        ? auth.user.roles.join(", ")
-        : auth?.user?.role) || "N/A";
+    const roleLabel = (Array.isArray(auth?.user?.roles) && auth.user.roles.length ? auth.user.roles.join(", ") : auth?.user?.role) || "N/A";
 
     return (
         <div>
             <PageHeader
                 title="Tổng quan"
                 subtitle="Tình hình kinh doanh hôm nay"
-                right={<button className="btn btn-success btn-sm">Xuất báo cáo hôm nay</button>}
+                right={<button className="btn btn-success btn-sm">Xuất báo cáo</button>}
             />
 
-            {/* THAY ĐỔI: Hiển thị thông báo đăng nhập thành công + Role, ẩn token */}
-            <div className="alert alert-success d-flex align-items-center gap-3 shadow-sm border-0" role="alert" style={{backgroundColor: '#d1e7dd', color: '#0f5132'}}>
+            <div className="alert alert-success d-flex align-items-center gap-3 shadow-sm border-0 mb-4" role="alert" style={{backgroundColor: '#d1e7dd', color: '#0f5132'}}>
                 <span className="bi bi-check-circle-fill" style={{fontSize: '1.5rem'}}></span>
                 <div>
                     <h6 className="alert-heading fw-bold mb-0">Đăng nhập thành công!</h6>
                     <small>
-                        Chào mừng bạn quay trở lại hệ thống. Vai trò hiện tại của bạn:
-                        <span className="badge bg-success ms-2">{roleLabel}</span>
+                        Chào mừng <strong>{auth?.user?.fullname}</strong> quay trở lại. Vai trò: <span className="badge bg-success">{roleLabel}</span>
                     </small>
                 </div>
             </div>
@@ -181,33 +182,39 @@ export default function DashboardPage() {
                     <StatCard label="Doanh thu hôm nay" value={loadingDailyStats ? "..." : formatCurrency(totalRevenue)} sub={dailyStatsError || (!loadingDailyStats && `${todaysOrderCount} hóa đơn`)} />
                 </div>
                 <div className="col-md-4">
-                    <StatCard label="Số hóa đơn hôm nay" value={loadingDailyStats ? "..." : `${todaysOrderCount} hóa đơn`} sub={dailyStatsError || "Tổng số đơn ghi nhận trong ngày"} />
+                    <StatCard label="Số hóa đơn hôm nay" value={loadingDailyStats ? "..." : `${todaysOrderCount} đơn`} sub={dailyStatsError || "Tổng số đơn đã thanh toán"} />
                 </div>
                 <div className="col-md-4">
-                    <StatCard label="Bàn đang phục vụ" value={loadingTables ? "..." : `${busyTables} / ${tables.length}`} sub={loadingTables ? "Đang kiểm tra..." : `${Math.round((busyTables / (tables.length || 1)) * 100)}% công suất`} />
+                    <StatCard label="Bàn đang phục vụ" value={loadingTables ? "..." : `${busyTables} / ${tables.length}`} sub={loadingTables ? "..." : `${Math.round((busyTables / (tables.length || 1)) * 100)}% công suất`} />
                 </div>
             </div>
 
             <div className="row g-3">
+                {/* Biểu đồ bên trái */}
                 <div className="col-md-8">
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
-                            <h6 className="mb-2">Doanh thu theo ngày (7 ngày gần nhất)</h6>
-                            {loadingDailyStats ? <div className="text-muted small">Đang tải biểu đồ...</div> : <DailyRevenueBarChart data={dailyStats} />}
+                            {loadingDailyStats ? <div className="text-muted small text-center py-5">Đang tải biểu đồ...</div> : <DailyRevenueBarChart data={dailyStats} />}
                         </div>
                     </div>
                 </div>
 
+                {/* Cột bên phải: Top Sản Phẩm & Trạng Thái Bàn */}
                 <div className="col-md-4">
+                    {/* [CẬP NHẬT] Hiển thị Top Products từ Server */}
                     <div className="card shadow-sm border-0 mb-3">
                         <div className="card-body">
-                            <h6 className="mb-2">Top sản phẩm bán chạy</h6>
-                            {loadingProducts ? <div className="text-muted small">Đang tải...</div> : (
+                            <h6 className="mb-3 border-bottom pb-2">🔥 Top bán chạy</h6>
+                            {loadingTopProducts ? <div className="text-muted small">Đang tải...</div> : (
+                                topProducts.length === 0 ? <div className="text-muted small">Chưa có dữ liệu bán hàng</div> :
                                 <ul className="list-group list-group-flush small">
-                                    {topProducts.map((p) => (
-                                        <li className="list-group-item d-flex justify-content-between px-0" key={p.productID}>
-                                            <span>{p.productName}</span>
-                                            <span className="fw-semibold">{Number(p.amount ?? 0)} món</span>
+                                    {topProducts.map((p, idx) => (
+                                        <li className="list-group-item d-flex justify-content-between px-0 align-items-center" key={p.productId || idx}>
+                                            <div className="d-flex align-items-center gap-2">
+                                                <span className={`badge rounded-pill ${idx === 0 ? 'bg-warning text-dark' : 'bg-light text-secondary border'}`}>{idx + 1}</span>
+                                                <span className="fw-semibold text-truncate" style={{maxWidth: '140px'}} title={p.productName}>{p.productName}</span>
+                                            </div>
+                                            <span className="text-success fw-bold">{Number(p.totalSold)} đã bán</span>
                                         </li>
                                     ))}
                                 </ul>
@@ -219,7 +226,7 @@ export default function DashboardPage() {
                         <div className="card-body">
                             <div className="d-flex justify-content-between align-items-center mb-2">
                                 <h6 className="mb-0">Trạng thái bàn</h6>
-                                <button className="btn btn-outline-secondary btn-sm" onClick={loadTables} disabled={loadingTables}><span className="bi bi-arrow-clockwise"></span></button>
+                                <button className="btn btn-outline-secondary btn-sm" onClick={loadTables} disabled={loadingTables}><i className="bi bi-arrow-clockwise"></i></button>
                             </div>
                             {loadingTables ? <div className="text-muted small">Đang tải...</div> : (
                                 <div className="d-flex flex-wrap gap-2">

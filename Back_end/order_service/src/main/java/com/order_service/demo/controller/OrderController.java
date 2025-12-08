@@ -5,6 +5,7 @@ import com.order_service.demo.dto.request.OrderCreationRequest;
 import com.order_service.demo.dto.request.OrderStatusUpdateRequest;
 import com.order_service.demo.dto.response.DailyOrderStatsResponse;
 import com.order_service.demo.dto.response.OrderResponse;
+import com.order_service.demo.dto.response.TopProductResponse;
 import com.order_service.demo.entity.PaymentMethod;
 import com.order_service.demo.service.OrderService;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -62,6 +64,22 @@ public class OrderController {
     public ApiResponse<List<PaymentMethod>> getPaymentMethods() {
         return ApiResponse.<List<PaymentMethod>>builder()
                 .result(orderService.getAllPaymentMethods())
+                .build();
+    }
+    @GetMapping("/top-selling")
+    public ApiResponse<List<TopProductResponse>> getTopSelling(@RequestParam(defaultValue = "5") int limit) {
+        return ApiResponse.<List<TopProductResponse>>builder()
+                .result(orderService.getTopSellingProducts(limit))
+                .build();
+    }
+
+    // API doanh thu theo khoảng ngày
+    @GetMapping("/revenue")
+    public ApiResponse<BigDecimal> getRevenue(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ApiResponse.<BigDecimal>builder()
+                .result(orderService.getRevenueBetween(startDate, endDate))
                 .build();
     }
 }

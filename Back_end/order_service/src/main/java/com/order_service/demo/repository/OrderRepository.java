@@ -7,8 +7,11 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Pageable;
+import com.order_service.demo.dto.response.TopProductResponse;
 public interface OrderRepository extends JpaRepository<Orders,String> {
     @Override
     Optional<Orders> findById(String OrderId);
@@ -17,4 +20,10 @@ public interface OrderRepository extends JpaRepository<Orders,String> {
                                                 @Param("end") LocalDateTime end);
 
     long countByOrderDateBetween(LocalDateTime start, LocalDateTime end);
+
+    @Query("SELECT new com.order_service.demo.dto.response.TopProductResponse(d.productId, d.productName, SUM(d.quantity)) " +
+            "FROM OrderDetail d " +
+            "GROUP BY d.productId, d.productName " +
+            "ORDER BY SUM(d.quantity) DESC")
+    List<TopProductResponse> findTopSellingProducts(Pageable pageable);
 }
