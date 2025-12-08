@@ -22,6 +22,8 @@ export default function SalesPage() {
 
     // State dữ liệu
     const [orders, setOrders] = useState([]);
+    const [allOrders, setAllOrders] = useState([]);
+    const [selectedDate, setSelectedDate] = useState("");
 
     // [ĐÃ SỬA] Thêm state lưu danh sách gốc để lọc client-side
     const [allProducts, setAllProducts] = useState([]);
@@ -57,6 +59,31 @@ export default function SalesPage() {
     const sortOrdersByDate = (items) => [...items].sort((a, b) => new Date(b.orderDate || 0) - new Date(a.orderDate || 0));
 
     // --- LOAD DATA ---
+    const applyOrderFilter = (list, dateValue = selectedDate) => {
+        if (!dateValue) return list;
+
+        return list.filter(order => {
+            const parsedDate = new Date(order.orderDate);
+            if (Number.isNaN(parsedDate.getTime())) return false;
+
+            // Lấy ngày theo giờ local
+            const year  = parsedDate.getFullYear();
+            const month = String(parsedDate.getMonth() + 1).padStart(2, "0");
+            const day   = String(parsedDate.getDate()).padStart(2, "0");
+            const localDate = `${year}-${month}-${day}`;   // ví dụ: "2025-12-01"
+
+            return localDate === dateValue;                // so với giá trị input date
+        });
+    };
+    const syncFilteredOrders = (list, dateValue = selectedDate) => {
+        const filtered = applyOrderFilter(list, dateValue);
+        setOrders(filtered);
+        if (!filtered.length) {
+            setSelectedOrderId(null);
+        } else if (!filtered.some(o => o.orderId === selectedOrderId)) {
+            setSelectedOrderId(filtered[0].orderId);
+        }
+    };
 
     const loadOrders = async () => {
         setLoadingOrders(true);
@@ -64,10 +91,8 @@ export default function SalesPage() {
         try {
             const data = await fetchOrders(token);
             const sorted = sortOrdersByDate(Array.isArray(data) ? data : []);
-            setOrders(sorted);
-            if (!sorted.some(o => o.orderId === selectedOrderId) && sorted.length) {
-                setSelectedOrderId(sorted[0].orderId);
-            }
+            setAllOrders(sorted);
+            syncFilteredOrders(sorted);
         } catch (err) {
             setOrderError(err.message || "Không thể tải hóa đơn");
         } finally {
@@ -136,6 +161,9 @@ export default function SalesPage() {
     }, [token]);
 
     // --- ACTIONS ---
+    useEffect(() => {
+        syncFilteredOrders(allOrders, selectedDate);
+    }, [selectedDate]);
 
     // [ĐÃ SỬA] Xử lý chuyển danh mục tại Client (nhanh hơn, không gọi API)
     const handleCategoryChange = (cat) => {
@@ -245,6 +273,27 @@ export default function SalesPage() {
                             <div className="p-3 border-bottom d-flex justify-content-between">
                                 <h6 className="mb-0">Hóa đơn ({orders.length})</h6>
                                 {loadingOrders && <small>Đang tải...</small>}
+                            </div>
+                            <div className="px-3 py-2 border-bottom bg-light">
+                                <div className="d-flex flex-wrap align-items-center gap-2">
+                                    <label className="small text-muted mb-0">Lọc theo ngày</label>
+                                    <input
+                                        type="date"
+                                        className="form-control form-control-sm"
+                                        style={{maxWidth: 170}}
+                                        value={selectedDate}
+                                        onChange={e => setSelectedDate(e.target.value)}
+                                    />
+                                    {selectedDate && (
+                                        <button
+                                            type="button"
+                                            className="btn btn-link btn-sm text-decoration-none"
+                                            onClick={() => setSelectedDate("")}
+                                        >
+                                            Xóa lọc
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             <div className="list-group list-group-flush" style={{maxHeight: '70vh', overflowY: 'auto'}}>
                                 {orders.map(order => (
