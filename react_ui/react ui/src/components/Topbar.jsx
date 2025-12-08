@@ -28,11 +28,12 @@ export default function Topbar() {
                     <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"></span>
                 </div>
                 <div className="d-flex align-items-center gap-2">
-                    <img
-                        src="https://via.placeholder.com/32"
-                        alt="avatar"
-                        className="rounded-circle"
-                    />
+                    <div
+                        className="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center fw-bold"
+                        style={{ width: 32, height: 32 }}
+                    >
+                        {displayName.charAt(0).toUpperCase()}
+                    </div>
                     <div className="me-2">
                         <div className="small fw-semibold">{displayName}</div>
                         <div className="small text-muted">{displayRole}</div>

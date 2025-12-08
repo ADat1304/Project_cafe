@@ -1,7 +1,7 @@
 // src/pages/SalesPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
-import { createOrder, fetchOrders, fetchProductsByCategory, updateOrderStatus, updateTableStatus, fetchTables, fetchPaymentMethods } from "../utils/api.js";
+import { createOrder, fetchOrders, fetchProducts, updateOrderStatus, updateTableStatus, fetchTables, fetchPaymentMethods } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
 
 const formatCurrency = (value) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(value || 0));
@@ -22,7 +22,11 @@ export default function SalesPage() {
 
     // State dữ liệu
     const [orders, setOrders] = useState([]);
-    const [products, setProducts] = useState([]);
+
+    // [ĐÃ SỬA] Thêm state lưu danh sách gốc để lọc client-side
+    const [allProducts, setAllProducts] = useState([]);
+    const [products, setProducts] = useState([]); // Danh sách hiển thị
+
     const [tables, setTables] = useState([]);
     const [paymentMethods, setPaymentMethods] = useState([]);
 
@@ -71,19 +75,29 @@ export default function SalesPage() {
         }
     };
 
-    const loadProducts = async (categoryName = selectedCategory) => {
+    // [ĐÃ SỬA] Hàm loadProducts chỉ tải 1 lần tất cả sản phẩm
+    const loadProducts = async () => {
         setLoadingProducts(true);
         setProductError("");
         try {
-            const normalizedCategory = categoryName || "all";
-            const data = await fetchProductsByCategory(normalizedCategory, token);
+            // Gọi API lấy toàn bộ sản phẩm (không lọc theo category ở server)
+            const data = await fetchProducts(token);
             const productList = Array.isArray(data) ? data : [];
-            setProducts(productList);
 
-            if (normalizedCategory === "all") {
-                const uniqueCats = Array.from(new Set(productList.map(i => i.categoryName).filter(Boolean)));
-                setCategories(["all", ...uniqueCats]);
+            // Lưu vào danh sách gốc và danh sách hiển thị
+            setAllProducts(productList);
+
+            // Nếu đang chọn category nào đó thì lọc lại, nếu không thì hiển thị hết
+            if (selectedCategory === "all") {
+                setProducts(productList);
+            } else {
+                setProducts(productList.filter(p => p.categoryName === selectedCategory));
             }
+
+            // Lấy danh sách Categories từ dữ liệu trả về
+            const uniqueCats = Array.from(new Set(productList.map(i => i.categoryName).filter(Boolean)));
+            setCategories(["all", ...uniqueCats]);
+
         } catch (err) {
             setProductError(err.message || "Không thể tải sản phẩm");
         } finally {
@@ -106,7 +120,6 @@ export default function SalesPage() {
     const loadPaymentMethods = async () => {
         try {
             const data = await fetchPaymentMethods(token);
-            // Lấy trực tiếp danh sách từ DB, không can thiệp sửa đổi
             setPaymentMethods(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Lỗi tải phương thức thanh toán:", err);
@@ -116,7 +129,7 @@ export default function SalesPage() {
     useEffect(() => {
         if(token) {
             loadOrders();
-            loadProducts("all");
+            loadProducts(); // Tải tất cả sản phẩm khi vào trang
             loadTables();
             loadPaymentMethods();
         }
@@ -124,9 +137,15 @@ export default function SalesPage() {
 
     // --- ACTIONS ---
 
+    // [ĐÃ SỬA] Xử lý chuyển danh mục tại Client (nhanh hơn, không gọi API)
     const handleCategoryChange = (cat) => {
         setSelectedCategory(cat);
-        loadProducts(cat);
+        if (cat === "all") {
+            setProducts(allProducts);
+        } else {
+            const filtered = allProducts.filter(p => p.categoryName === cat);
+            setProducts(filtered);
+        }
     };
 
     const selectedOrder = orders.find(o => o.orderId === selectedOrderId) || (orders.length ? orders[0] : null);
@@ -264,6 +283,11 @@ export default function SalesPage() {
 
                             {loadingProducts ? <div className="text-center py-3">Đang tải menu...</div> : (
                                 <div className="row g-2" style={{maxHeight: '65vh', overflowY: 'auto'}}>
+                                    {/* [ĐÃ SỬA] Kiểm tra nếu không có sản phẩm sau khi lọc */}
+                                    {products.length === 0 && (
+                                        <div className="col-12 text-center text-muted py-4">Không có món nào trong danh mục này</div>
+                                    )}
+
                                     {products.map(p => (
                                         <div className="col-12" key={p.productID}>
                                             <div className="border rounded p-2 d-flex gap-2 align-items-center bg-white hover-shadow">
@@ -380,7 +404,6 @@ export default function SalesPage() {
                                             </select>
                                         </div>
 
-                                        {/* [ĐÃ SỬA] Hiển thị chính xác giá trị từ DB, không gán tên cứng */}
                                         <div className="col-md-6">
                                             <label className="form-label fw-semibold small">Thanh toán</label>
                                             <select
@@ -407,7 +430,8 @@ export default function SalesPage() {
                                                     <select className="form-select form-select-sm" value={item.productName} required
                                                         onChange={e => updateItem(idx, 'productName', e.target.value)}>
                                                         <option value="">Chọn món...</option>
-                                                        {products.map(p => (
+                                                        {/* Sử dụng allProducts ở đây để luôn hiện đủ món khi chọn, tránh bị lọc mất */}
+                                                        {allProducts.map(p => (
                                                             <option key={p.productID} value={p.productName}>{p.productName} - {formatCurrency(p.price)}</option>
                                                         ))}
                                                     </select>

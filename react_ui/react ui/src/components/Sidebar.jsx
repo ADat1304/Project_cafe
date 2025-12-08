@@ -7,10 +7,15 @@ export default function Sidebar() {
         (isActive ? "active bg-white text-success fw-semibold shadow-sm" : "text-white-50");
 
     return (
-        <aside
-            className="d-flex flex-column"
-            style={{ width: 230, backgroundColor: "#046c4e" }}
-        >
+      <aside
+              className="d-flex flex-column flex-shrink-0" // Thêm flex-shrink-0
+              style={{
+                  width: 230,
+                  minWidth: 230, // Thêm dòng này để chắc chắn chiều rộng cố định
+                  backgroundColor: "#046c4e",
+                  minHeight: "100vh" // Thêm dòng này để background luôn full chiều cao
+              }}
+          >
             <div className="p-3 border-bottom border-success-subtle">
                 <div className="d-flex align-items-center gap-2">
                     <div

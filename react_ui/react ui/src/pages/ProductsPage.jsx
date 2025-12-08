@@ -1,6 +1,6 @@
+// src/pages/ProductsPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
-// Import thêm updateProduct và deleteProduct
 import { createProduct, fetchProducts, fetchCategories, updateProduct, deleteProduct } from "../utils/api.js";
 import { getAuth, getScopesFromToken } from "../utils/auth.js";
 
@@ -13,9 +13,9 @@ export default function ProductsPage() {
     const [loading, setLoading] = useState(false);
 
     const [error, setError] = useState("");
-    const [actionError, setActionError] = useState(""); // Đổi tên để dùng chung cho Create/Update
+    const [actionError, setActionError] = useState("");
     const [actionSuccess, setActionSuccess] = useState("");
-    const [submitting, setSubmitting] = useState(false); // Đổi tên state creating -> submitting
+    const [submitting, setSubmitting] = useState(false);
 
     // State xác định chế độ sửa
     const [editingProduct, setEditingProduct] = useState(null);
@@ -26,7 +26,7 @@ export default function ProductsPage() {
         price: "",
         amount: "",
         categoryName: "",
-        images: "",
+        images: "", // Lưu chuỗi URL ảnh
     });
 
     const token = useMemo(() => getAuth()?.token, []);
@@ -67,29 +67,23 @@ export default function ProductsPage() {
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
-    const handleImageFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const previewUrl = URL.createObjectURL(file);
-            setImagePreview(previewUrl);
-            setForm(prev => ({ ...prev, images: file.name }));
-        }
-    };
-
     // Hàm chuẩn bị form để sửa
     const handleEditClick = (product) => {
         setEditingProduct(product);
+        // Lấy chuỗi ảnh từ dữ liệu (nếu mảng thì nối lại bằng dấu phẩy)
+        const imgStr = product.images && product.images.length > 0 ? product.images.join(",") : "";
+
         setForm({
             productName: product.productName,
             price: product.price,
             amount: product.amount,
             categoryName: product.categoryName || "",
-            // Nếu có ảnh, lấy ảnh đầu tiên gán vào (hoặc xử lý logic chuỗi ảnh tùy bạn)
-            images: product.images && product.images.length > 0 ? product.images.join(",") : ""
+            images: imgStr
         });
-        // Nếu có ảnh online thì hiện preview
-        if (product.images && product.images.length > 0) {
-            setImagePreview(product.images[0]);
+
+        // Nếu có ảnh thì hiện preview ảnh đầu tiên
+        if (imgStr) {
+            setImagePreview(imgStr.split(',')[0]);
         } else {
             setImagePreview(null);
         }
@@ -135,6 +129,7 @@ export default function ProductsPage() {
                 price: Number(form.price || 0),
                 amount: form.amount === "" ? null : Number(form.amount),
                 categoryName: form.categoryName.trim() || undefined,
+                // Tách chuỗi link ảnh thành mảng (hỗ trợ nhiều ảnh cách nhau dấu phẩy)
                 images: form.images
                     .split(",")
                     .map((img) => img.trim())
@@ -208,7 +203,12 @@ export default function ProductsPage() {
                                                         <div className="rounded border bg-light d-flex align-items-center justify-content-center"
                                                              style={{width: 40, height: 40, overflow: 'hidden'}}>
                                                             {p.images && p.images.length > 0 ? (
-                                                                <img src={p.images[0]} alt="" className="w-100 h-100 object-fit-cover"/>
+                                                                <img
+                                                                    src={p.images[0]}
+                                                                    alt=""
+                                                                    className="w-100 h-100 object-fit-cover"
+                                                                    onError={(e) => {e.target.onerror = null; e.target.src = "https://placehold.co/40x40?text=..."}}
+                                                                />
                                                             ) : (
                                                                 <i className="bi bi-cup-hot text-muted"></i>
                                                             )}
@@ -341,32 +341,59 @@ export default function ProductsPage() {
                                         </div>
                                     </div>
 
+                                    {/* --- PHẦN NHẬP LINK ẢNH MỚI --- */}
                                     <div className="mb-3">
-                                        <label className="form-label fw-semibold">Hình ảnh</label>
-                                        <input
-                                            type="file"
-                                            className="form-control form-control-sm"
-                                            accept="image/*"
-                                            onChange={handleImageFileChange}
-                                        />
+                                        <label className="form-label fw-semibold">Hình ảnh (Link Online)</label>
+
+                                        <div className="input-group input-group-sm">
+                                            <span className="input-group-text"><i className="bi bi-link-45deg"></i></span>
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Dán link ảnh vào đây (VD: https://i.imgur.com/abc.jpg)"
+                                                name="images"
+                                                value={form.images}
+                                                onChange={(e) => {
+                                                    handleChange(e);
+                                                    setImagePreview(e.target.value);
+                                                }}
+                                            />
+                                        </div>
+                                        <div className="form-text text-muted small fst-italic">
+                                            Bạn có thể copy link ảnh từ Facebook, Google hoặc các trang web khác.
+                                        </div>
+
                                         {imagePreview ? (
                                             <div className="mt-2 text-center border rounded p-2 bg-light position-relative">
                                                 <img
                                                     src={imagePreview}
                                                     alt="Preview"
-                                                    style={{maxHeight: '150px', maxWidth: '100%', borderRadius: '4px'}}
+                                                    style={{maxHeight: '180px', maxWidth: '100%', borderRadius: '4px', objectFit: 'contain'}}
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = "https://placehold.co/400x300?text=Lỗi+Link+Ảnh";
+                                                    }}
                                                 />
-                                                <div className="text-muted mt-1 fst-italic text-truncate" style={{fontSize: '0.75rem'}}>
-                                                    {form.images}
-                                                </div>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2 opacity-75"
+                                                    onClick={() => {
+                                                        setForm(prev => ({ ...prev, images: "" }));
+                                                        setImagePreview(null);
+                                                    }}
+                                                    title="Xóa ảnh"
+                                                >
+                                                    <i className="bi bi-x-lg"></i>
+                                                </button>
                                             </div>
                                         ) : (
-                                            <div className="mt-2 text-center border border-dashed rounded p-3 bg-light text-muted">
-                                                <i className="bi bi-image fs-4 d-block"></i>
-                                                <small>Chưa chọn ảnh</small>
+                                            <div className="mt-2 text-center border border-dashed rounded p-4 bg-light text-muted">
+                                                <i className="bi bi-card-image fs-3 d-block mb-1"></i>
+                                                <small>Chưa có hình ảnh</small>
                                             </div>
                                         )}
                                     </div>
+                                    {/* --- HẾT PHẦN NHẬP LINK ẢNH --- */}
 
                                     <div className="d-grid gap-2">
                                         <button
