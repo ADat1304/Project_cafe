@@ -55,4 +55,11 @@ public class EsbOrderController {
         String token = authorization.replace("Bearer ", "");
         return ResponseEntity.ok(orderClient.getDailyStats(date, token));
     }
+    @GetMapping("/payment-methods")
+    public ResponseEntity<List<Object>> getPaymentMethods(
+            @RequestHeader(name = "Authorization") String authorization
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(orderClient.getPaymentMethods(token));
+    }
 }

@@ -58,4 +58,29 @@ public class EsbProductController {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
         return ResponseEntity.ok(productClient.incrementInventory(productId, request, token));
     }
+    @GetMapping("/categories")
+    public ResponseEntity<List<String>> getAllCategories() {
+        return ResponseEntity.ok(productClient.getAllCategories());
+    }
+    // [THÊM MỚI] Endpoint Sửa
+    @PutMapping("/{productId}")
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable String productId,
+            @RequestBody ProductCreationRequest request,
+            @RequestHeader(name = "Authorization", required = false) String authorization
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return ResponseEntity.ok(productClient.updateProduct(productId, request, token));
+    }
+
+    // [THÊM MỚI] Endpoint Xóa
+    @DeleteMapping("/{productId}")
+    public ResponseEntity<Void> deleteProduct(
+            @PathVariable String productId,
+            @RequestHeader(name = "Authorization", required = false) String authorization
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        productClient.deleteProduct(productId, token);
+        return ResponseEntity.noContent().build();
+    }
 }

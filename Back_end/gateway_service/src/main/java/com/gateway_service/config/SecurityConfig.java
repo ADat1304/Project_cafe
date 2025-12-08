@@ -4,15 +4,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -39,6 +36,7 @@ public class SecurityConfig {
             "/esb/auth/validate",
             "/actuator/health"
     };
+
     @Value("${security.jwt.secret}")
     private String SIGNER_KEY;
 
@@ -47,31 +45,37 @@ public class SecurityConfig {
         httpSecurity
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(request -> request
+                        // 1. Cho phép truy cập công khai các endpoint Auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/esb/products/**").hasAuthority("ADMIN")
+
+                        // 2. CẤU HÌNH QUYỀN SẢN PHẨM (Sửa đổi tại đây)
+                        // Cho phép cả ADMIN và USER được Thêm (POST), Sửa (PUT), Xóa (DELETE)
+                        .requestMatchers(HttpMethod.POST, "/esb/products/**").hasAnyAuthority("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.PUT, "/esb/products/**").hasAnyAuthority("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.DELETE, "/esb/products/**").hasAnyAuthority("ADMIN", "USER")
+
+                        // Ai cũng có thể xem danh sách sản phẩm (GET)
                         .requestMatchers(HttpMethod.GET, "/esb/products/**").permitAll()
-//                        .requestMatchers(HttpMethod.GET,"/esb/users/**").hasAuthority("SCOPE_ADMIN")
+
+                        // 3. Các request còn lại yêu cầu phải đăng nhập
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt
                         .decoder(jwtDecoder())
                         .jwtAuthenticationConverter(jwtAuthenticationConverter())))
                 .csrf(AbstractHttpConfigurer::disable);
 
-
-        httpSecurity.csrf(AbstractHttpConfigurer::disable);
         return httpSecurity.build();
     }
 
-//postgresSQL
-
     @Bean
-    public JwtDecoder jwtDecoder(){
-        SecretKeySpec secretKeySpec = new SecretKeySpec(SIGNER_KEY.getBytes(),"HS512");
+    public JwtDecoder jwtDecoder() {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(SIGNER_KEY.getBytes(), "HS512");
         return NimbusJwtDecoder
                 .withSecretKey(secretKeySpec)
                 .macAlgorithm(MacAlgorithm.HS512)
                 .build();
     }
+
     private JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(this::extractAuthorities);
@@ -102,7 +106,6 @@ public class SecurityConfig {
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
-//        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -1,3 +1,4 @@
+// src/pages/EmployeesPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import { createUser, deleteUser, fetchUsers, updateUser } from "../utils/api.js";
@@ -36,11 +37,7 @@ export default function EmployeesPage() {
         }
     };
 
-    useEffect(() => {
-        if (isAdmin) {
-            loadUsers();
-        }
-    }, [isAdmin]);
+    useEffect(() => { if (isAdmin) loadUsers(); }, [isAdmin]);
 
     const resetForm = () => {
         setForm({ username: "", password: "", role: "USER", fullname: "" });
@@ -57,7 +54,6 @@ export default function EmployeesPage() {
         setSubmitting(true);
         setFormError("");
         setSuccess("");
-
         try {
             if (editingUser) {
                 await updateUser(editingUser.id || editingUser.userId || editingUser.username, {
@@ -65,7 +61,7 @@ export default function EmployeesPage() {
                     fullname: form.fullname || undefined,
                     roles: form.role ? [form.role] : undefined,
                 }, token);
-                setSuccess("Cập nhật người dùng thành công");
+                setSuccess("Cập nhật thành công");
             } else {
                 await createUser({
                     username: form.username.trim(),
@@ -75,11 +71,10 @@ export default function EmployeesPage() {
                 }, token);
                 setSuccess("Tạo người dùng thành công");
             }
-
             resetForm();
             await loadUsers();
         } catch (err) {
-            setFormError(err.message || "Không thể lưu thông tin người dùng");
+            setFormError(err.message || "Lỗi lưu thông tin");
         } finally {
             setSubmitting(false);
         }
@@ -96,108 +91,69 @@ export default function EmployeesPage() {
     };
 
     const handleDelete = async (user) => {
-        if (!window.confirm(`Xác nhận xóa tài khoản ${user.username || user.userName}?`)) return;
-
+        if (!window.confirm(`Xóa tài khoản ${user.username}?`)) return;
         setSubmitting(true);
-        setFormError("");
-        setSuccess("");
         try {
             await deleteUser(user.id || user.userId || user.username, token);
             setSuccess("Đã xóa người dùng");
-            if (editingUser && (editingUser.id === user.id || editingUser.username === user.username)) {
-                resetForm();
-            }
             await loadUsers();
         } catch (err) {
-            setFormError(err.message || "Không thể xóa người dùng");
+            setFormError(err.message);
         } finally {
             setSubmitting(false);
         }
     };
 
-    const renderId = (user) => user.id || user.userId || user.userID || user.username;
-    const renderUsername = (user) => user.username || user.userName || user.userID;
-    const renderPassword = (user) => user.password || user.passWord || "(ẩn)";
+    const renderId = (user) => user.id || user.userId || user.username;
+    const renderUsername = (user) => user.username || user.userName;
 
     if (!isAdmin) {
         return (
             <div>
-                <PageHeader title="Nhân Viên" subtitle="Quản lý tài khoản người dùng" />
-                <div className="alert alert-warning" role="alert">
-                    Chỉ có ADMIN mới được truy cập trang này
-                </div>
+                <PageHeader title="Nhân Viên" subtitle="Quản lý tài khoản" />
+                <div className="alert alert-warning">Chỉ ADMIN mới được truy cập trang này.</div>
             </div>
         );
     }
 
     return (
         <div>
-            <PageHeader
-                title="Nhân Viên"
-                subtitle="Quản lý tài khoản, vai trò và quyền truy cập"
-                right={
-                    <button className="btn btn-outline-secondary btn-sm" onClick={loadUsers} disabled={loading}>
-                        <span className="bi bi-arrow-clockwise me-1"></span>
-                        Làm mới
-                    </button>
-                }
+            <PageHeader title="Nhân Viên" subtitle="Quản lý tài khoản & phân quyền"
+                right={<button className="btn btn-outline-secondary btn-sm" onClick={loadUsers} disabled={loading}><i className="bi bi-arrow-clockwise"></i> Làm mới</button>}
             />
-
-            {error && (
-                <div className="alert alert-danger" role="alert">
-                    {error}
-                </div>
-            )}
 
             <div className="row g-3">
                 <div className="col-lg-8">
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
-                            {loading ? (
-                                <div className="text-center text-muted py-4">Đang tải danh sách người dùng...</div>
-                            ) : users.length === 0 ? (
-                                <div className="text-center text-muted py-4">Chưa có người dùng trong hệ thống</div>
-                            ) : (
+                            {error && <div className="alert alert-danger py-2">{error}</div>}
+                            {loading ? <div className="text-center py-4">Đang tải...</div> : (
                                 <div className="table-responsive">
                                     <table className="table table-hover table-sm align-middle">
                                         <thead className="table-light">
-                                        <tr>
-                                            <th>ID</th>
-                                            <th>Tài khoản</th>
-                                            <th>Mật khẩu</th>
-                                            <th>Vai trò</th>
-                                            <th className="text-end">Thao tác</th>
-                                        </tr>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Tài khoản</th>
+                                                <th>Họ tên</th>
+                                                <th>Vai trò</th>
+                                                <th className="text-end">Thao tác</th>
+                                            </tr>
                                         </thead>
                                         <tbody>
-                                        {users.map((user) => (
-                                            <tr key={renderId(user)}>
-                                                <td className="text-muted small">{renderId(user)}</td>
-                                                <td className="fw-semibold">{renderUsername(user)}</td>
-                                                <td>{renderPassword(user)}</td>
-                                                <td>{formatRoles(user.roles || user.role)}</td>
-                                                <td className="text-end">
-                                                    <div className="btn-group btn-group-sm" role="group">
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-primary"
-                                                            onClick={() => handleEdit(user)}
-                                                            disabled={submitting}
-                                                        >
-                                                            Sửa
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-danger"
-                                                            onClick={() => handleDelete(user)}
-                                                            disabled={submitting}
-                                                        >
-                                                            Xóa
-                                                        </button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                            {users.map((user) => (
+                                                <tr key={renderId(user)}>
+                                                    <td className="text-muted small">{renderId(user)}</td>
+                                                    <td className="fw-semibold">{renderUsername(user)}</td>
+                                                    <td>{user.fullname || user.fullName || "-"}</td>
+                                                    <td><span className={`badge ${formatRoles(user.roles).includes('ADMIN') ? 'bg-danger' : 'bg-primary'}`}>{formatRoles(user.roles)}</span></td>
+                                                    <td className="text-end">
+                                                        <div className="btn-group btn-group-sm">
+                                                            <button className="btn btn-outline-primary" onClick={() => handleEdit(user)} disabled={submitting}>Sửa</button>
+                                                            <button className="btn btn-outline-danger" onClick={() => handleDelete(user)} disabled={submitting}>Xóa</button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
@@ -209,96 +165,36 @@ export default function EmployeesPage() {
                 <div className="col-lg-4">
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
-                            <h6 className="mb-2">{editingUser ? "Cập nhật tài khoản" : "Thêm tài khoản"}</h6>
-                            <p className="text-muted small mb-3">
-                                Các nút thao tác sẽ gửi yêu cầu tới gateway để tạo, sửa hoặc xóa người dùng.
-                            </p>
-
-                            {formError && (
-                                <div className="alert alert-danger py-2 small" role="alert">
-                                    {formError}
-                                </div>
-                            )}
-                            {success && (
-                                <div className="alert alert-success py-2 small" role="alert">
-                                    {success}
-                                </div>
-                            )}
+                            <h6 className="mb-3">{editingUser ? "Cập nhật tài khoản" : "Thêm nhân viên mới"}</h6>
+                            {formError && <div className="alert alert-danger py-2 small">{formError}</div>}
+                            {success && <div className="alert alert-success py-2 small">{success}</div>}
 
                             <form className="small" onSubmit={handleSubmit}>
-                                {!editingUser && (
-                                    <div className="mb-2">
-                                        <label className="form-label">Tài khoản</label>
-                                        <input
-                                            type="text"
-                                            name="username"
-                                            className="form-control form-control-sm"
-                                            value={form.username}
-                                            onChange={handleChange}
-                                            required
-                                            disabled={submitting}
-                                        />
-                                    </div>
-                                )}
-
+                                <div className="mb-2">
+                                    <label className="form-label">Tài khoản</label>
+                                    <input type="text" name="username" className="form-control form-control-sm" value={form.username} onChange={handleChange} required disabled={!!editingUser} />
+                                </div>
                                 <div className="mb-2">
                                     <label className="form-label">Mật khẩu</label>
-                                    <input
-                                        type="password"
-                                        name="password"
-                                        className="form-control form-control-sm"
-                                        value={form.password}
-                                        onChange={handleChange}
-                                        required={!editingUser}
-                                        placeholder={editingUser ? "Để trống nếu không đổi" : ""}
-                                        disabled={submitting}
-                                    />
+                                    <input type="password" name="password" className="form-control form-control-sm" value={form.password} onChange={handleChange} required={!editingUser} placeholder={editingUser ? "Để trống nếu không đổi" : ""} />
                                 </div>
-
                                 <div className="mb-2">
                                     <label className="form-label">Họ tên</label>
-                                    <input
-                                        type="text"
-                                        name="fullname"
-                                        className="form-control form-control-sm"
-                                        value={form.fullname}
-                                        onChange={handleChange}
-                                        placeholder="Tên hiển thị"
-                                        disabled={submitting}
-                                    />
+                                    <input type="text" name="fullname" className="form-control form-control-sm" value={form.fullname} onChange={handleChange} placeholder="Tên hiển thị" />
                                 </div>
-
                                 <div className="mb-3">
                                     <label className="form-label">Vai trò</label>
-                                    <input
-                                        type="text"
-                                        name="role"
-                                        className="form-control form-control-sm"
-                                        value={form.role}
-                                        onChange={handleChange}
-                                        placeholder="ADMIN hoặc USER"
-                                        disabled={submitting}
-                                    />
+                                    <select className="form-select form-select-sm" name="role" value={form.role} onChange={handleChange}>
+                                        <option value="USER">Nhân viên (USER)</option>
+                                        <option value="ADMIN">Quản trị viên (ADMIN)</option>
+                                    </select>
                                 </div>
 
                                 <div className="d-flex gap-2">
                                     <button type="submit" className="btn btn-success btn-sm" disabled={submitting}>
-                                        {submitting
-                                            ? "Đang gửi..."
-                                            : editingUser
-                                                ? "Lưu thay đổi"
-                                                : "Thêm người dùng"}
+                                        {submitting ? "Đang xử lý..." : editingUser ? "Lưu thay đổi" : "Thêm người dùng"}
                                     </button>
-                                    {editingUser && (
-                                        <button
-                                            type="button"
-                                            className="btn btn-outline-secondary btn-sm"
-                                            onClick={resetForm}
-                                            disabled={submitting}
-                                        >
-                                            Hủy
-                                        </button>
-                                    )}
+                                    {editingUser && <button type="button" className="btn btn-outline-secondary btn-sm" onClick={resetForm} disabled={submitting}>Hủy</button>}
                                 </div>
                             </form>
                         </div>

@@ -137,4 +137,7 @@ public class OrderService {
                 .orderCount(orderCount)
                 .build();
     }
+    public List<PaymentMethod> getAllPaymentMethods() {
+        return paymentMethodRepository.findAll();
+    }
 }

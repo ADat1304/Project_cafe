@@ -90,4 +90,44 @@ public class ProductService {
                 .map(productMapper::toProductResponse)
                 .collect(Collectors.toList());
     }
+    public List<String> getAllCategoryNames() {
+        return categoryRepository.findAll().stream()
+                .map(Category::getCategoryName)
+                .distinct() // Loại bỏ trùng lặp nếu cần
+                .collect(Collectors.toList());
+    }
+    // [THÊM MỚI] Cập nhật sản phẩm
+    public ProductResponse updateProduct(String productId, ProductCreationRequest request) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+
+        // Cập nhật thông tin cơ bản
+        product.setProductName(request.getProductName());
+        product.setPrice(request.getPrice());
+        product.setAmount(request.getAmount());
+
+        // Cập nhật danh mục
+        Category category = categoryRepository.findByCategoryName(request.getCategoryName())
+                .orElseThrow(() -> new RuntimeException("Category not found: " + request.getCategoryName()));
+        product.setCategory(category);
+
+        // Cập nhật ảnh (Xóa ảnh cũ, thêm ảnh mới - cách đơn giản nhất)
+        if (Objects.nonNull(request.getImages())) {
+            product.getImages().clear(); // Xóa ảnh cũ
+            List<Image> newImages = request.getImages().stream()
+                    .map(link -> Image.builder().imageLink(link).product(product).build())
+                    .collect(Collectors.toList());
+            product.getImages().addAll(newImages);
+        }
+
+        return productMapper.toProductResponse(productRepository.save(product));
+    }
+
+    // [THÊM MỚI] Xóa sản phẩm
+    public void deleteProduct(String productId) {
+        if (!productRepository.existsById(productId)) {
+            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+        productRepository.deleteById(productId);
+    }
 }

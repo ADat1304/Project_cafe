@@ -5,6 +5,7 @@ import com.order_service.demo.dto.request.OrderCreationRequest;
 import com.order_service.demo.dto.request.OrderStatusUpdateRequest;
 import com.order_service.demo.dto.response.DailyOrderStatsResponse;
 import com.order_service.demo.dto.response.OrderResponse;
+import com.order_service.demo.entity.PaymentMethod;
 import com.order_service.demo.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -55,6 +56,12 @@ public class OrderController {
         DailyOrderStatsResponse stats = orderService.getDailyStats(date);
         return ApiResponse.<DailyOrderStatsResponse>builder()
                 .result(stats)
+                .build();
+    }
+    @GetMapping("/payment-methods")
+    public ApiResponse<List<PaymentMethod>> getPaymentMethods() {
+        return ApiResponse.<List<PaymentMethod>>builder()
+                .result(orderService.getAllPaymentMethods())
                 .build();
     }
 }

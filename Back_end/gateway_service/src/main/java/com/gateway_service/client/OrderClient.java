@@ -96,4 +96,17 @@ public class OrderClient {
         );
         return response.getBody() != null ? response.getBody().getResult() : null;
     }
+    public List<Object> getPaymentMethods(String token) {
+        HttpHeaders headers = new HttpHeaders();
+        if (token != null && !token.isBlank()) {
+            headers.setBearerAuth(token);
+        }
+        ResponseEntity<ApiResponse<List<Object>>> response = restTemplate.exchange(
+                endpointsProperties.getOrder() + "/orders/payment-methods",
+                HttpMethod.GET,
+                new HttpEntity<>(headers),
+                new ParameterizedTypeReference<>() {}
+        );
+        return response.getBody() != null ? response.getBody().getResult() : List.of();
+    }
 }

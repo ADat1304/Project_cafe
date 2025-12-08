@@ -146,3 +146,17 @@ export const fetchDailyOrderStats = (date, token) => {
 };
 
 export { GATEWAY_BASE_URL, requestGateway };
+export const fetchCategories = (token) =>
+    requestGateway(`${ESB_PREFIX}/products/categories`, { token });
+
+
+// [THÊM MỚI] Update Product
+export const updateProduct = (productId, data, token) =>
+    requestGateway(`${ESB_PREFIX}/products/${productId}`, { method: "PUT", body: data, token });
+
+// [THÊM MỚI] Delete Product
+export const deleteProduct = (productId, token) =>
+    requestGateway(`${ESB_PREFIX}/products/${productId}`, { method: "DELETE", token });
+
+ export const fetchPaymentMethods = (token) =>
+     requestGateway(`${ESB_PREFIX}/orders/payment-methods`, { token });

@@ -75,4 +75,26 @@ public class ProductController {
                 .result(product)
                 .build();
     }
+    @GetMapping("/categories")
+    public ApiResponse<List<String>> getAllCategories() {
+        return ApiResponse.<List<String>>builder()
+                .result(productService.getAllCategoryNames())
+                .build();
+    }
+    // [THÊM MỚI] API Sửa
+    @PutMapping("/{productId}")
+    public ApiResponse<ProductResponse> updateProduct(@PathVariable String productId, @Valid @RequestBody ProductCreationRequest request) {
+        return ApiResponse.<ProductResponse>builder()
+                .result(productService.updateProduct(productId, request))
+                .build();
+    }
+
+    // [THÊM MỚI] API Xóa
+    @DeleteMapping("/{productId}")
+    public ApiResponse<String> deleteProduct(@PathVariable String productId) {
+        productService.deleteProduct(productId);
+        return ApiResponse.<String>builder()
+                .result("Product has been deleted")
+                .build();
+    }
 }

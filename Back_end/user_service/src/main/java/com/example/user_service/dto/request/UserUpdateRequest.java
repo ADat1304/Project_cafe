@@ -3,6 +3,8 @@ package com.example.user_service.dto.request;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -12,5 +14,6 @@ import lombok.experimental.FieldDefaults;
 public class UserUpdateRequest {
     String password;
     String fullname;
+    List<String> roles;
 }
 

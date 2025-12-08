@@ -1,7 +1,5 @@
 package com.gateway_service.client;
 
-
-
 import com.gateway_service.common.ApiResponse;
 import com.gateway_service.config.ServiceEndpointsProperties;
 import com.gateway_service.dto.product.InventoryUpdateRequest;
@@ -16,9 +14,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder; // Import quan trọng
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.util.List;
 
 @Component
@@ -92,15 +90,55 @@ public class ProductClient {
         }
         return headers;
     }
+
+    // [CẬP NHẬT] Cũng nên sửa đoạn này dùng UriComponentsBuilder để an toàn hơn
     public List<ProductResponse> getProductsByCategory(String categoryName) {
-        String encodedCategory = URLEncoder.encode(categoryName, StandardCharsets.UTF_8);
+        URI uri = UriComponentsBuilder
+                .fromHttpUrl(endpointsProperties.getProduct())
+                .path("/products/category/{categoryName}")
+                .buildAndExpand(categoryName)
+                .toUri();
+
         ResponseEntity<ApiResponse<List<ProductResponse>>> response = restTemplate.exchange(
-                endpointsProperties.getProduct() + "/products/category/" + encodedCategory,
+                uri,
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<>() {
                 }
         );
         return response.getBody() != null ? response.getBody().getResult() : List.of();
+    }
+
+    public List<String> getAllCategories() {
+        ResponseEntity<ApiResponse<List<String>>> response = restTemplate.exchange(
+                endpointsProperties.getProduct() + "/products/categories",
+                HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        return response.getBody() != null ? response.getBody().getResult() : List.of();
+    }
+
+    public ProductResponse updateProduct(String productId, ProductCreationRequest request, String token) {
+        HttpHeaders headers = defaultHeaders(token);
+        HttpEntity<ProductCreationRequest> entity = new HttpEntity<>(request, headers);
+        ResponseEntity<ApiResponse<ProductResponse>> response = restTemplate.exchange(
+                endpointsProperties.getProduct() + "/products/" + productId,
+                HttpMethod.PUT,
+                entity,
+                new ParameterizedTypeReference<>() {}
+        );
+        return response.getBody() != null ? response.getBody().getResult() : null;
+    }
+
+    public void deleteProduct(String productId, String token) {
+        HttpHeaders headers = defaultHeaders(token);
+        restTemplate.exchange(
+                endpointsProperties.getProduct() + "/products/" + productId,
+                HttpMethod.DELETE,
+                new HttpEntity<>(headers),
+                Void.class
+        );
     }
 }
