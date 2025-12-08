@@ -55,7 +55,7 @@ public class OrderService {
             CafeTable table = cafeTableRepository.findByTableNumber(request.getTableNumber())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
             order.setTable(table);
-            table.setStatus(1);
+            table.setStatus(1); // Cập nhật bàn thành Bận
         }
 
         if (request.getPaymentMethodType() != null) {
@@ -68,9 +68,12 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest item : request.getItems()) {
+            // 1. Lấy thông tin sản phẩm
             ProductSummary product = productClient.fetchProductByName(item.getProductName());
 
-            productClient.increaseInventory(product.getProductID(), item.getQuantity());
+            // 2. [FIX QUAN TRỌNG] Gọi hàm giảm tồn kho
+            // Nếu hết hàng, ProductClient mới (ở trên) sẽ ném ra PRODUCT_OUT_OF_STOCK
+            productClient.decreaseInventory(product.getProductID(), item.getQuantity());
 
             OrderDetail detail = OrderDetail.builder()
                     .order(order)

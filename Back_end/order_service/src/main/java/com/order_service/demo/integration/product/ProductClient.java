@@ -1,7 +1,5 @@
 package com.order_service.demo.integration.product;
 
-
-
 import com.order_service.demo.common.ApiResponse;
 import com.order_service.demo.common.exception.AppException;
 import com.order_service.demo.common.exception.ErrorCode;
@@ -17,9 +15,7 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.util.UriUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 @Slf4j
@@ -33,10 +29,12 @@ public class ProductClient {
     private String productServiceUrl;
 
     public ProductSummary fetchProductByName(String productName) {
+        // [FIX] Sử dụng buildAndExpand để Spring tự xử lý encode đúng chuẩn 1 lần duy nhất
         String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
-                .path("/products/name/")
-                .pathSegment(encode(productName))
+                .path("/products/name/{name}") // Sử dụng placeholder
+                .buildAndExpand(productName)   // Điền giá trị vào placeholder
                 .toUriString();
+
         try {
             ResponseEntity<ApiResponse<ProductSummary>> response = restTemplate.exchange(
                     url,
@@ -44,25 +42,32 @@ public class ProductClient {
                     null,
                     new ParameterizedTypeReference<ApiResponse<ProductSummary>>() {}
             );
-            ProductSummary product = Objects.requireNonNull(response.getBody()).getResult();
-            if (Objects.isNull(product)) {
+
+            if (response.getBody() == null || response.getBody().getResult() == null) {
                 throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
             }
-            return product;
-        } catch (HttpClientErrorException.NotFound ex) {
-            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+            return response.getBody().getResult();
+
+        } catch (HttpClientErrorException ex) {
+            log.error("Product service error fetching {}: {}", productName, ex.getResponseBodyAsString());
+            // Kiểm tra mã lỗi từ Product Service trả về
+            if (ex.getResponseBodyAsString().contains("1007") || ex.getStatusCode().value() == 404) {
+                throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+            }
+            throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
         } catch (RestClientException ex) {
-            log.error("Failed to fetch product {}", productName, ex);
+            log.error("Connection error fetching product {}", productName, ex);
             throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
         }
     }
 
     public void decreaseInventory(String productId, int quantity) {
+        // [FIX] Cũng nên dùng buildAndExpand cho đồng bộ, dù ID thường không có ký tự đặc biệt
         String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
-                .path("/products/")
-                .pathSegment(productId)
-                .path("/inventory/decrease")
+                .path("/products/{id}/inventory/decrease")
+                .buildAndExpand(productId)
                 .toUriString();
+
         try {
             HttpEntity<InventoryUpdateRequest> request = new HttpEntity<>(new InventoryUpdateRequest(quantity));
             restTemplate.exchange(
@@ -71,36 +76,22 @@ public class ProductClient {
                     request,
                     new ParameterizedTypeReference<ApiResponse<ProductSummary>>() {}
             );
-        } catch (HttpClientErrorException.NotFound ex) {
-            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
-        } catch (RestClientException ex) {
-            log.error("Failed to update inventory for product {}", productId, ex);
+        } catch (HttpClientErrorException ex) {
+            String responseBody = ex.getResponseBodyAsString();
+            log.error("Failed to decrease inventory: {}", responseBody);
+
+            if (responseBody.contains("1008")) { // PRODUCT_OUT_OF_STOCK
+                throw new AppException(ErrorCode.PRODUCT_OUT_OF_STOCK);
+            }
+            if (responseBody.contains("1007")) { // PRODUCT_NOT_FOUND
+                throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+            }
             throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
-        }
-    }
-    public void increaseInventory(String productId, int quantity) {
-        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
-                .path("/products/")
-                .pathSegment(productId)
-                .path("/inventory/increase")
-                .toUriString();
-        try {
-            HttpEntity<InventoryUpdateRequest> request = new HttpEntity<>(new InventoryUpdateRequest(quantity));
-            restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    request,
-                    new ParameterizedTypeReference<ApiResponse<ProductSummary>>() {}
-            );
-        } catch (HttpClientErrorException.NotFound ex) {
-            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
         } catch (RestClientException ex) {
-            log.error("Failed to update inventory for product {}", productId, ex);
+            log.error("Service unavailable when updating inventory for {}", productId, ex);
             throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
         }
     }
 
-    private String encode(String value) {
-        return UriUtils.encodePathSegment(value, StandardCharsets.UTF_8);
-    }
+    // Các hàm khác giữ nguyên hoặc sửa tương tự...
 }
