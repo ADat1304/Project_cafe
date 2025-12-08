@@ -12,7 +12,8 @@ public enum ErrorCode {
     PRODUCT_SERVICE_UNAVAILABLE(1009, "product service is not available"),
     TABLE_NOT_FOUND(1010, "table not found"),
     PAYMENT_METHOD_NOT_FOUND(1011, "payment method not found"),
-    ORDER_ITEMS_EMPTY(1012, "order must contain at least one product");
+    ORDER_ITEMS_EMPTY(1012, "order must contain at least one product"),
+    SCRAPE_FAILED(1013, "Failed to scrape Highlands Coffee menu");
 
     private int code;
     private String messenger;

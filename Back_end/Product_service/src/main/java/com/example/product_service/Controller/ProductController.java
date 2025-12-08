@@ -81,6 +81,12 @@ public class ProductController {
                 .result(productService.getAllCategoryNames())
                 .build();
     }
+    @PostMapping("/import/highlands")
+    public ApiResponse<List<ProductResponse>> importHighlandsCoffeeMenu() {
+        return ApiResponse.<List<ProductResponse>>builder()
+                .result(productService.importHighlandsCoffeeMenu())
+                .build();
+    }
     // [THÊM MỚI] API Sửa
     @PutMapping("/{productId}")
     public ApiResponse<ProductResponse> updateProduct(@PathVariable String productId, @Valid @RequestBody ProductCreationRequest request) {
