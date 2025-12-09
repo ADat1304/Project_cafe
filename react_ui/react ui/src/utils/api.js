@@ -1,4 +1,4 @@
-import { getAuth } from "./auth.js";
+import { clearAuth, getAuth } from "./auth.js";
 
 const GATEWAY_BASE_URL = (import.meta.env.VITE_GATEWAY_URL || "http://localhost:8080").replace(/\/$/, "");
 const ESB_PREFIX = "/esb";
@@ -57,6 +57,13 @@ async function requestGateway(path, { method = "GET", body, token, headers } = {
     }
 
     if (!response.ok) {
+        if (response.status === 401) {
+            // Token hết hạn hoặc không hợp lệ: dọn dẹp và đưa người dùng về trang đăng nhập
+            clearAuth();
+            if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+                window.location.replace("/login");
+            }
+        }
         const message = payload?.message || `Request failed with status ${response.status}`;
         const err = new Error(message);
         err.status = response.status;

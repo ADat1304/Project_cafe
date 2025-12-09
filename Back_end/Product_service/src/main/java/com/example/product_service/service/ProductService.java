@@ -11,13 +11,14 @@ import com.example.product_service.entity.Product;
 import com.example.product_service.mapper.ProductMapper;
 import com.example.product_service.repository.CategoryRepository;
 import com.example.product_service.repository.ProductRepository;
+import com.example.product_service.scraper.HighlandsCoffeeScraper;
+import com.example.product_service.scraper.HighlandsProduct;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,7 +28,7 @@ public class ProductService {
     ProductRepository productRepository;
     ProductMapper productMapper;
     CategoryRepository categoryRepository;
-
+    HighlandsCoffeeScraper highlandsCoffeeScraper;
 
     public ProductResponse createProduct(ProductCreationRequest request){
         if(productRepository.existsByProductName(request.getProductName()))
@@ -95,6 +96,54 @@ public class ProductService {
                 .map(Category::getCategoryName)
                 .distinct() // Loại bỏ trùng lặp nếu cần
                 .collect(Collectors.toList());
+    }
+
+    public List<ProductResponse> importHighlandsCoffeeMenu() {
+        List<HighlandsProduct> scrapedProducts;
+        try {
+            scrapedProducts = highlandsCoffeeScraper.scrapeMenu();
+        } catch (Exception ex) {
+            throw new AppException(ErrorCode.SCRAPE_FAILED);
+        }
+
+        Map<String, Category> categoryCache = new HashMap<>();
+        List<ProductResponse> responses = new ArrayList<>();
+
+        for (HighlandsProduct scrapedProduct : scrapedProducts) {
+            String categoryName = normalizeCategoryName(scrapedProduct.categoryName());
+            Category category = categoryCache.computeIfAbsent(categoryName, name ->
+                    categoryRepository.findByCategoryName(name)
+                            .orElseGet(() -> categoryRepository.save(Category.builder().categoryName(name).build())));
+
+            if (productRepository.existsByProductName(scrapedProduct.productName())) {
+                continue;
+            }
+
+            Product product = Product.builder()
+                    .productName(scrapedProduct.productName())
+                    .price(scrapedProduct.price())
+                    .amount(0)
+                    .category(category)
+                    .build();
+
+            if (Objects.nonNull(scrapedProduct.imageUrl()) && !scrapedProduct.imageUrl().isBlank()) {
+                product.setImages(List.of(Image.builder()
+                        .imageLink(scrapedProduct.imageUrl())
+                        .product(product)
+                        .build()));
+            }
+
+            responses.add(productMapper.toProductResponse(productRepository.save(product)));
+        }
+
+        return responses;
+    }
+
+    private String normalizeCategoryName(String rawCategory) {
+        if (Objects.isNull(rawCategory) || rawCategory.isBlank()) {
+            return "Cà phê";
+        }
+        return rawCategory.trim();
     }
     // [THÊM MỚI] Cập nhật sản phẩm
     public ProductResponse updateProduct(String productId, ProductCreationRequest request) {
