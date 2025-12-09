@@ -170,3 +170,5 @@ export const deleteProduct = (productId, token) =>
  export const fetchTopSellingProducts = (limit, token) => {
          return requestGateway(`${ESB_PREFIX}/orders/top-selling?limit=${limit}`, { token });
      };
+ export const importHighlandsProducts = (token) =>
+     requestGateway(`${ESB_PREFIX}/products/import/highlands`, { method: "POST", token });

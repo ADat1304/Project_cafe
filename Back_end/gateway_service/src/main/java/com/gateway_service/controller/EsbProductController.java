@@ -83,4 +83,11 @@ public class EsbProductController {
         productClient.deleteProduct(productId, token);
         return ResponseEntity.noContent().build();
     }
+    @PostMapping("/import/highlands")
+    public ResponseEntity<List<ProductResponse>> importHighlands(
+            @RequestHeader(name = "Authorization", required = false) String authorization
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return ResponseEntity.ok(productClient.importHighlands(token));
+    }
 }

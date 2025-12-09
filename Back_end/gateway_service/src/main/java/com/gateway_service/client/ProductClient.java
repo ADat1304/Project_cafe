@@ -141,4 +141,16 @@ public class ProductClient {
                 Void.class
         );
     }
+    public List<ProductResponse> importHighlands(String token) {
+        HttpHeaders headers = defaultHeaders(token);
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<ApiResponse<List<ProductResponse>>> response = restTemplate.exchange(
+                endpointsProperties.getProduct() + "/products/import/highlands",
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<>() {}
+        );
+        return response.getBody() != null ? response.getBody().getResult() : List.of();
+    }
 }

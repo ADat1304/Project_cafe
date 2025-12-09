@@ -1,7 +1,7 @@
 // src/pages/ProductsPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
-import { createProduct, fetchProducts, fetchCategories, updateProduct, deleteProduct } from "../utils/api.js";
+import { createProduct, fetchProducts, fetchCategories, updateProduct, deleteProduct, importHighlandsProducts } from "../utils/api.js";
 import { getAuth, getScopesFromToken } from "../utils/auth.js";
 
 const formatCurrency = (value) =>
@@ -12,12 +12,14 @@ export default function ProductsPage() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
 
+    // [THÊM MỚI] State import loading
+    const [importing, setImporting] = useState(false);
+
     const [error, setError] = useState("");
     const [actionError, setActionError] = useState("");
     const [actionSuccess, setActionSuccess] = useState("");
     const [submitting, setSubmitting] = useState(false);
 
-    // State xác định chế độ sửa
     const [editingProduct, setEditingProduct] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
 
@@ -26,12 +28,12 @@ export default function ProductsPage() {
         price: "",
         amount: "",
         categoryName: "",
-        images: "", // Lưu chuỗi URL ảnh
+        images: "",
     });
 
     const token = useMemo(() => getAuth()?.token, []);
     const scopes = useMemo(() => getScopesFromToken(token), [token]);
-    const isAdmin = scopes.includes("ADMIN"); // Chỉ admin mới có quyền
+    const isAdmin = scopes.includes("ADMIN");
 
     const loadProducts = async () => {
         setLoading(true);
@@ -62,15 +64,37 @@ export default function ProductsPage() {
         }
     }, [token]);
 
+    // [THÊM MỚI] Hàm xử lý Import dữ liệu từ Highlands
+    const handleImportHighlands = async () => {
+        if (!window.confirm("Bạn có chắc muốn lấy dữ liệu menu từ Highlands Coffee? Quá trình này có thể mất vài giây.")) {
+            return;
+        }
+
+        setImporting(true);
+        setActionError("");
+        setActionSuccess("");
+
+        try {
+            const result = await importHighlandsProducts(token);
+            setActionSuccess(`Đã lấy thành công ${result ? result.length : 0} sản phẩm từ Highlands!`);
+            // Tải lại dữ liệu sau khi import xong
+            await loadProducts();
+            await loadCategories();
+        } catch (err) {
+            console.error(err);
+            setActionError(err.message || "Lỗi khi lấy dữ liệu từ Highlands");
+        } finally {
+            setImporting(false);
+        }
+    };
+
     const handleChange = (evt) => {
         const { name, value } = evt.target;
         setForm((prev) => ({ ...prev, [name]: value }));
     };
 
-    // Hàm chuẩn bị form để sửa
     const handleEditClick = (product) => {
         setEditingProduct(product);
-        // Lấy chuỗi ảnh từ dữ liệu (nếu mảng thì nối lại bằng dấu phẩy)
         const imgStr = product.images && product.images.length > 0 ? product.images.join(",") : "";
 
         setForm({
@@ -81,7 +105,6 @@ export default function ProductsPage() {
             images: imgStr
         });
 
-        // Nếu có ảnh thì hiện preview ảnh đầu tiên
         if (imgStr) {
             setImagePreview(imgStr.split(',')[0]);
         } else {
@@ -91,7 +114,6 @@ export default function ProductsPage() {
         setActionSuccess("");
     };
 
-    // Hàm hủy chế độ sửa
     const handleCancelEdit = () => {
         setEditingProduct(null);
         setForm({ productName: "", price: "", amount: "", categoryName: "", images: "" });
@@ -100,7 +122,6 @@ export default function ProductsPage() {
         setActionSuccess("");
     };
 
-    // Hàm xóa sản phẩm
     const handleDeleteClick = async (product) => {
         if (!window.confirm(`Bạn có chắc muốn xóa món "${product.productName}" không?`)) return;
 
@@ -108,7 +129,6 @@ export default function ProductsPage() {
             await deleteProduct(product.productID, token);
             alert("Đã xóa thành công!");
             loadProducts();
-            // Nếu đang sửa món này thì hủy form
             if (editingProduct?.productID === product.productID) {
                 handleCancelEdit();
             }
@@ -129,7 +149,6 @@ export default function ProductsPage() {
                 price: Number(form.price || 0),
                 amount: form.amount === "" ? null : Number(form.amount),
                 categoryName: form.categoryName.trim() || undefined,
-                // Tách chuỗi link ảnh thành mảng (hỗ trợ nhiều ảnh cách nhau dấu phẩy)
                 images: form.images
                     .split(",")
                     .map((img) => img.trim())
@@ -137,17 +156,14 @@ export default function ProductsPage() {
             };
 
             if (editingProduct) {
-                // Logic UPDATE
                 await updateProduct(editingProduct.productID, payload, token);
                 setActionSuccess("Cập nhật sản phẩm thành công");
-                setEditingProduct(null); // Thoát chế độ sửa sau khi xong
+                setEditingProduct(null);
             } else {
-                // Logic CREATE
                 await createProduct(payload, token);
                 setActionSuccess("Tạo sản phẩm thành công");
             }
 
-            // Reset form và load lại
             setForm({ productName: "", price: "", amount: "", categoryName: "", images: "" });
             setImagePreview(null);
             await loadProducts();
@@ -165,19 +181,49 @@ export default function ProductsPage() {
                 title="Sản phẩm / Menu"
                 subtitle="Quản lý danh mục & món uống"
                 right={
-                    <button className="btn btn-outline-secondary btn-sm" onClick={loadProducts} disabled={loading}>
-                        <i className="bi bi-arrow-clockwise me-1"></i>
-                        Làm mới
-                    </button>
+                    <div className="d-flex gap-2">
+                        {/* [THÊM MỚI] Nút Import Highlands (Chỉ Admin) */}
+                        {isAdmin && (
+                            <button
+                                className="btn btn-warning btn-sm text-dark fw-semibold"
+                                onClick={handleImportHighlands}
+                                disabled={loading || importing}
+                            >
+                                {importing ? (
+                                    <>
+                                        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                                        Đang lấy...
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="bi bi-cloud-download me-1"></i>
+                                        Lấy Menu Highlands
+                                    </>
+                                )}
+                            </button>
+                        )}
+
+                        <button className="btn btn-outline-secondary btn-sm" onClick={loadProducts} disabled={loading || importing}>
+                            <i className="bi bi-arrow-clockwise me-1"></i>
+                            Làm mới
+                        </button>
+                    </div>
                 }
             />
 
             <div className="row g-3">
-                {/* DANH SÁCH SẢN PHẨM */}
                 <div className={isAdmin ? "col-lg-8" : "col-12"}>
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
                             {error && <div className="alert alert-danger py-2 small">{error}</div>}
+
+                            {/* [THÊM MỚI] Thông báo import */}
+                            {importing && (
+                                <div className="alert alert-info py-2 small d-flex align-items-center">
+                                    <span className="spinner-border spinner-border-sm me-2"></span>
+                                    Đang kết nối tới Highlands Coffee để lấy dữ liệu, vui lòng chờ...
+                                </div>
+                            )}
 
                             {loading ? (
                                 <div className="text-center text-muted py-4">Đang tải danh sách sản phẩm...</div>
@@ -231,14 +277,14 @@ export default function ProductsPage() {
                                                                 <button
                                                                     className="btn btn-outline-primary"
                                                                     onClick={() => handleEditClick(p)}
-                                                                    disabled={submitting}
+                                                                    disabled={submitting || importing}
                                                                 >
                                                                     <i className="bi bi-pencil"></i>
                                                                 </button>
                                                                 <button
                                                                     className="btn btn-outline-danger"
                                                                     onClick={() => handleDeleteClick(p)}
-                                                                    disabled={submitting || editingProduct?.productID === p.productID}
+                                                                    disabled={submitting || importing || editingProduct?.productID === p.productID}
                                                                 >
                                                                     <i className="bi bi-trash"></i>
                                                                 </button>
@@ -255,7 +301,6 @@ export default function ProductsPage() {
                     </div>
                 </div>
 
-                {/* FORM THÊM / SỬA (Chỉ Admin thấy) */}
                 {isAdmin && (
                     <div className="col-lg-4">
                         <div className={`card shadow-sm border-0 h-100 ${editingProduct ? "border-warning" : ""}`}>
@@ -305,14 +350,6 @@ export default function ProductsPage() {
                                                 ))}
                                             </select>
                                         </div>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm mt-1"
-                                            placeholder="Hoặc nhập tên danh mục mới..."
-                                            name="categoryName"
-                                            value={form.categoryName} // Bind value để hiển thị khi edit
-                                            onChange={handleChange}
-                                        />
                                     </div>
 
                                     <div className="row g-2 mb-2">
@@ -341,16 +378,14 @@ export default function ProductsPage() {
                                         </div>
                                     </div>
 
-                                    {/* --- PHẦN NHẬP LINK ẢNH MỚI --- */}
                                     <div className="mb-3">
                                         <label className="form-label fw-semibold">Hình ảnh (Link Online)</label>
-
                                         <div className="input-group input-group-sm">
                                             <span className="input-group-text"><i className="bi bi-link-45deg"></i></span>
                                             <input
                                                 type="text"
                                                 className="form-control"
-                                                placeholder="Dán link ảnh vào đây (VD: https://i.imgur.com/abc.jpg)"
+                                                placeholder="Dán link ảnh vào đây..."
                                                 name="images"
                                                 value={form.images}
                                                 onChange={(e) => {
@@ -360,7 +395,7 @@ export default function ProductsPage() {
                                             />
                                         </div>
                                         <div className="form-text text-muted small fst-italic">
-                                            Bạn có thể copy link ảnh từ Facebook, Google hoặc các trang web khác.
+                                            Bạn có thể copy link ảnh từ Facebook, Google.
                                         </div>
 
                                         {imagePreview ? (
@@ -393,13 +428,12 @@ export default function ProductsPage() {
                                             </div>
                                         )}
                                     </div>
-                                    {/* --- HẾT PHẦN NHẬP LINK ẢNH --- */}
 
                                     <div className="d-grid gap-2">
                                         <button
                                             className={`btn btn-sm py-2 ${editingProduct ? "btn-warning" : "btn-success"}`}
                                             type="submit"
-                                            disabled={submitting}
+                                            disabled={submitting || importing}
                                         >
                                             {submitting ? (
                                                 <>
@@ -419,7 +453,7 @@ export default function ProductsPage() {
                                                 type="button"
                                                 className="btn btn-outline-secondary btn-sm"
                                                 onClick={handleCancelEdit}
-                                                disabled={submitting}
+                                                disabled={submitting || importing}
                                             >
                                                 Hủy bỏ
                                             </button>
