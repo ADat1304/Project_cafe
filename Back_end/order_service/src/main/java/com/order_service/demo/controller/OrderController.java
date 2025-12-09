@@ -79,7 +79,7 @@ public class OrderController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ApiResponse.<BigDecimal>builder()
-                .result(orderService.getRevenueBetween(startDate, endDate))
+                .result(orderService.getRevenueBetween(startDate, endDate,"CLOSE"))
                 .build();
     }
 }

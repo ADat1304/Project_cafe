@@ -133,8 +133,8 @@ public class OrderService {
         LocalDateTime startOfDay = targetDate.atStartOfDay();
         LocalDateTime startOfNextDay = targetDate.plusDays(1).atStartOfDay();
 
-        BigDecimal totalAmount = orderRepository.sumTotalAmountByOrderDateBetween(startOfDay, startOfNextDay);
-        long orderCount = orderRepository.countByOrderDateBetween(startOfDay, startOfNextDay);
+        BigDecimal totalAmount = orderRepository.sumTotalAmountByOrderDateBetweenAndStatus(startOfDay,startOfNextDay,"CLOSE");
+        long orderCount = orderRepository.countByOrderDateBetweenAndStatus(startOfDay, startOfNextDay,"CLOSE");
 
         return DailyOrderStatsResponse.builder()
                 .date(targetDate)
@@ -150,9 +150,9 @@ public class OrderService {
     }
 
     // Bổ sung hàm lấy doanh thu theo khoảng thời gian (Optional)
-    public BigDecimal getRevenueBetween(LocalDate startDate, LocalDate endDate) {
+    public BigDecimal getRevenueBetween(LocalDate startDate, LocalDate endDate,String status) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.plusDays(1).atStartOfDay();
-        return orderRepository.sumTotalAmountByOrderDateBetween(start, end);
+        return orderRepository.sumTotalAmountByOrderDateBetweenAndStatus(start, end,status);
     }
 }

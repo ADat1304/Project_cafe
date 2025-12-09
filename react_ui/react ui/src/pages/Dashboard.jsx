@@ -108,7 +108,10 @@ export default function DashboardPage() {
         try {
             const stats = await Promise.all(
                 dates.map(async (date) => {
-                    const iso = date.toISOString().slice(0, 10);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const iso = `${year}-${month}-${day}`;
                     // Gọi API lấy doanh thu từng ngày
                     const response = await fetchDailyOrderStats(iso, token);
                     return {

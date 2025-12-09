@@ -23,7 +23,7 @@ export default function SalesPage() {
     // State dữ liệu
     const [orders, setOrders] = useState([]);
 
-    // [ĐÃ SỬA] Thêm state lưu danh sách gốc để lọc client-side
+    // State lưu danh sách gốc để lọc client-side
     const [allProducts, setAllProducts] = useState([]);
     const [products, setProducts] = useState([]); // Danh sách hiển thị
 
@@ -75,12 +75,11 @@ export default function SalesPage() {
         }
     };
 
-    // [ĐÃ SỬA] Hàm loadProducts chỉ tải 1 lần tất cả sản phẩm
     const loadProducts = async () => {
         setLoadingProducts(true);
         setProductError("");
         try {
-            // Gọi API lấy toàn bộ sản phẩm (không lọc theo category ở server)
+            // Gọi API lấy toàn bộ sản phẩm
             const data = await fetchProducts(token);
             const productList = Array.isArray(data) ? data : [];
 
@@ -129,7 +128,7 @@ export default function SalesPage() {
     useEffect(() => {
         if(token) {
             loadOrders();
-            loadProducts(); // Tải tất cả sản phẩm khi vào trang
+            loadProducts();
             loadTables();
             loadPaymentMethods();
         }
@@ -137,7 +136,6 @@ export default function SalesPage() {
 
     // --- ACTIONS ---
 
-    // [ĐÃ SỬA] Xử lý chuyển danh mục tại Client (nhanh hơn, không gọi API)
     const handleCategoryChange = (cat) => {
         setSelectedCategory(cat);
         if (cat === "all") {
@@ -272,10 +270,16 @@ export default function SalesPage() {
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
                             <h6 className="mb-3">Menu Sản Phẩm</h6>
-                            <div className="d-flex flex-wrap gap-2 mb-3">
+
+                            {/* [SỬA LỖI] Thêm thanh cuộn ngang cho danh sách danh mục */}
+                            <div className="d-flex flex-nowrap overflow-auto gap-2 mb-3 pb-2" style={{ scrollbarWidth: 'thin' }}>
                                 {categories.map(cat => (
-                                    <button key={cat} onClick={() => handleCategoryChange(cat)}
-                                        className={`btn btn-sm ${selectedCategory === cat ? "btn-success" : "btn-light border"}`}>
+                                    <button
+                                        key={cat}
+                                        onClick={() => handleCategoryChange(cat)}
+                                        className={`btn btn-sm flex-shrink-0 ${selectedCategory === cat ? "btn-success" : "btn-light border"}`}
+                                        style={{ whiteSpace: "nowrap" }}
+                                    >
                                         {cat === 'all' ? 'Tất cả' : cat}
                                     </button>
                                 ))}
@@ -283,7 +287,6 @@ export default function SalesPage() {
 
                             {loadingProducts ? <div className="text-center py-3">Đang tải menu...</div> : (
                                 <div className="row g-2" style={{maxHeight: '65vh', overflowY: 'auto'}}>
-                                    {/* [ĐÃ SỬA] Kiểm tra nếu không có sản phẩm sau khi lọc */}
                                     {products.length === 0 && (
                                         <div className="col-12 text-center text-muted py-4">Không có món nào trong danh mục này</div>
                                     )}
