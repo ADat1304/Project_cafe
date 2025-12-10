@@ -98,6 +98,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+
     public List<ProductResponse> importHighlandsCoffeeMenu() {
         List<HighlandsProduct> scrapedProducts;
         try {

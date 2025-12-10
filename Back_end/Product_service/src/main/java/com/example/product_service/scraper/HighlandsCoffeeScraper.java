@@ -25,27 +25,17 @@ public class HighlandsCoffeeScraper {
 
     public List<HighlandsProduct> scrapeMenu() throws IOException {
         Document document = connect();
-        Elements categoryBlocks = document.select("div.product-item-list, section.section, div.container");
-        if (categoryBlocks.isEmpty()) {
-            categoryBlocks = new Elements(document.body());
-        }
-
+        Elements productCards = document.select(".product-item, li.product-item, .product-item-list .item, .product-list .item");
         List<HighlandsProduct> products = new ArrayList<>();
-        for (Element block : categoryBlocks) {
-            String categoryName = resolveCategoryName(block).orElse("Cà phê");
-            Elements productCards = block.select(".product-item, .item, li");
-            if (productCards.isEmpty()) {
+        for (Element card : productCards) {
+            String productName = extractProductName(card);
+            if (productName.isBlank()) {
                 continue;
             }
-            for (Element card : productCards) {
-                String productName = extractProductName(card);
-                if (productName.isBlank()) {
-                    continue;
-                }
-                BigDecimal price = extractPrice(card);
-                String imageUrl = extractImage(card);
-                products.add(new HighlandsProduct(categoryName, productName, price, imageUrl));
-            }
+            String categoryName = resolveCategoryName(card).orElse("Cà phê");
+            BigDecimal price = extractPrice(card);
+            String imageUrl = extractImage(card);
+            products.add(new HighlandsProduct(categoryName, productName, price, imageUrl));
         }
         return products;
     }
@@ -60,20 +50,27 @@ public class HighlandsCoffeeScraper {
         return connection.get();
     }
 
-    private Optional<String> resolveCategoryName(Element block) {
-        Element heading = block.selectFirst("h2, h3, .title, .heading");
-        if (heading != null && !heading.text().isBlank()) {
-            return Optional.of(heading.text().trim());
-        }
-        Element previousHeading = block.previousElementSibling();
-        while (previousHeading != null) {
-            Element title = previousHeading.selectFirst("h2, h3, .title, .heading");
-            if (title != null && !title.text().isBlank()) {
-                return Optional.of(title.text().trim());
+    private Optional<String> resolveCategoryName(Element card) {
+        for (Element ancestor : card.parents()) {
+            Element heading = selectDirectHeading(ancestor);
+            if (heading != null && !heading.text().isBlank()) {
+                return Optional.of(heading.text().trim());
             }
-            previousHeading = previousHeading.previousElementSibling();
+
+            Element previousHeading = ancestor.previousElementSibling();
+            while (previousHeading != null) {
+                Element siblingHeading = selectDirectHeading(previousHeading);
+                if (siblingHeading != null && !siblingHeading.text().isBlank()) {
+                    return Optional.of(siblingHeading.text().trim());
+                }
+                previousHeading = previousHeading.previousElementSibling();
+            }
         }
         return Optional.empty();
+    }
+
+    private Element selectDirectHeading(Element element) {
+        return element.selectFirst("> h2, > h3, > .title, > .heading");
     }
 
     private String extractProductName(Element card) {
