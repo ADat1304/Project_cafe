@@ -25,7 +25,7 @@ public class HighlandsCoffeeScraper {
 
     public List<HighlandsProduct> scrapeMenu() throws IOException {
         Document document = connect();
-        Elements productCards = document.select(".product-item, li.product-item, .product-item-list .item, .product-list .item");
+        Elements productCards = locateProductCards(document);
         List<HighlandsProduct> products = new ArrayList<>();
         for (Element card : productCards) {
             String productName = extractProductName(card);
@@ -41,13 +41,41 @@ public class HighlandsCoffeeScraper {
     }
 
     private Document connect() throws IOException {
-        Connection connection = Jsoup.connect(TARGET_URL)
+        Connection.Response response = Jsoup.connect(TARGET_URL)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36")
-                .referrer("https://www.google.com")
+                .referrer("https://www.google.com/")
+                .header("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
+                .header("accept-language", "vi,en-US;q=0.9,en;q=0.8")
+                .header("cache-control", "no-cache")
+                .header("pragma", "no-cache")
                 .ignoreContentType(true)
-                .timeout(15000)
-                .followRedirects(true);
-        return connection.get();
+                .ignoreHttpErrors(true)
+                .timeout(20000)
+                .followRedirects(true)
+                .execute();
+
+        if (response.statusCode() >= 400) {
+            throw new IOException("Failed to fetch Highlands Coffee menu, status " + response.statusCode());
+        }
+
+        return response.parse();
+    }
+
+    private Elements locateProductCards(Document document) {
+        Elements cards = document.select(
+                ".product-item, li.product-item, .product-item-list .item, .product-list .item, " +
+                        ".product, .product-card, .product-block, [data-product-id]");
+
+        if (!cards.isEmpty()) {
+            return cards;
+        }
+
+        Elements legacyCards = document.select(".item-product, .product-menu-item, .menu-item");
+        if (!legacyCards.isEmpty()) {
+            return legacyCards;
+        }
+
+        return document.select("article, .item");
     }
 
     private Optional<String> resolveCategoryName(Element card) {
@@ -82,11 +110,29 @@ public class HighlandsCoffeeScraper {
     }
 
     private BigDecimal extractPrice(Element card) {
-        Element priceElement = card.selectFirst(".price, .product-price, .prize, .gia");
-        if (priceElement == null) {
+        Element priceElement = card.selectFirst(".price, .product-price, .prize, .gia, [itemprop=price], [data-price], [data-price-vnd]");
+        String priceText = "";
+
+        if (priceElement != null) {
+            if (priceElement.hasAttr("content")) {
+                priceText = priceElement.attr("content");
+            } else if (priceElement.hasAttr("data-price")) {
+                priceText = priceElement.attr("data-price");
+            } else if (priceElement.hasAttr("data-price-vnd")) {
+                priceText = priceElement.attr("data-price-vnd");
+            } else {
+                priceText = priceElement.text();
+            }
+        }
+
+        if (priceText.isBlank()) {
+            priceText = card.attr("data-price");
+        }
+
+        if (priceText.isBlank()) {
             return BigDecimal.ZERO;
         }
-        String priceText = priceElement.text();
+
         Matcher matcher = DIGIT_PATTERN.matcher(priceText.replace("\u00a0", " "));
         if (!matcher.find()) {
             return BigDecimal.ZERO;
@@ -101,11 +147,14 @@ public class HighlandsCoffeeScraper {
     }
 
     private String extractImage(Element card) {
-        Element image = card.selectFirst("img");
+        Element image = card.selectFirst("img, picture source");
         if (image == null) {
             return "";
         }
-        String imageUrl = image.hasAttr("data-src") ? image.absUrl("data-src") : image.absUrl("src");
+        String imageUrl = image.hasAttr("data-src") ? image.absUrl("data-src")
+                : image.hasAttr("data-lazy") ? image.absUrl("data-lazy")
+                : image.hasAttr("srcset") ? image.absUrl("srcset")
+                : image.absUrl("src");
         return imageUrl == null ? "" : imageUrl;
     }
 }
