@@ -18,6 +18,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
 
+
+import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProductService {
+
     ProductRepository productRepository;
     ProductMapper productMapper;
     CategoryRepository categoryRepository;
@@ -74,6 +77,7 @@ public class ProductService {
         product.setAmount(product.getAmount() - request.getQuantity());
         return productMapper.toProductResponse(productRepository.save(product));
     }
+
     public ProductResponse incrementInventory(String productId, InventoryUpdateRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
@@ -81,6 +85,7 @@ public class ProductService {
         product.setAmount(product.getAmount() + request.getQuantity());
         return productMapper.toProductResponse(productRepository.save(product));
     }
+
     public List<ProductResponse> getProductsByCategory(String categoryName) {
         if (Objects.isNull(categoryName) || categoryName.isBlank() || categoryName.equalsIgnoreCase("all")) {
             return getAllProducts();
@@ -91,31 +96,42 @@ public class ProductService {
                 .map(productMapper::toProductResponse)
                 .collect(Collectors.toList());
     }
+
     public List<String> getAllCategoryNames() {
         return categoryRepository.findAll().stream()
                 .map(Category::getCategoryName)
-                .distinct() // Loại bỏ trùng lặp nếu cần
+                .distinct()
                 .collect(Collectors.toList());
     }
 
+    // ================== IMPORT HIGHLANDS ==================
 
     public List<ProductResponse> importHighlandsCoffeeMenu() {
         List<HighlandsProduct> scrapedProducts;
         try {
             scrapedProducts = highlandsCoffeeScraper.scrapeMenu();
         } catch (Exception ex) {
-            throw new AppException(ErrorCode.SCRAPE_FAILED,
-                    String.format("Failed to scrape Highlands Coffee menu: %s", ex.getMessage()));
+            return List.of(); // hoặc throw AppExcep
         }
 
         Map<String, Category> categoryCache = new HashMap<>();
         List<ProductResponse> responses = new ArrayList<>();
 
         for (HighlandsProduct scrapedProduct : scrapedProducts) {
-            String categoryName = normalizeCategoryName(scrapedProduct.categoryName());
+            if (shouldSkipHighlandsProduct(scrapedProduct)) {
+                continue;
+            }
+            // chuẩn hoá category về Cà Phê / Trà / Freeze / Khác
+            String categoryName = normalizeCategoryName(
+                    scrapedProduct.categoryName(),  // raw category từ Highlands
+                    scrapedProduct.productName()    // tên sản phẩm
+            );
+
             Category category = categoryCache.computeIfAbsent(categoryName, name ->
                     categoryRepository.findByCategoryName(name)
-                            .orElseGet(() -> categoryRepository.save(Category.builder().categoryName(name).build())));
+                            .orElseGet(() -> categoryRepository.save(
+                                    Category.builder().categoryName(name).build()
+                            )));
 
             if (productRepository.existsByProductName(scrapedProduct.productName())) {
                 continue;
@@ -129,10 +145,12 @@ public class ProductService {
                     .build();
 
             if (Objects.nonNull(scrapedProduct.imageUrl()) && !scrapedProduct.imageUrl().isBlank()) {
-                product.setImages(List.of(Image.builder()
-                        .imageLink(scrapedProduct.imageUrl())
-                        .product(product)
-                        .build()));
+                product.setImages(List.of(
+                        Image.builder()
+                                .imageLink(scrapedProduct.imageUrl())
+                                .product(product)
+                                .build()
+                ));
             }
 
             responses.add(productMapper.toProductResponse(productRepository.save(product)));
@@ -141,30 +159,150 @@ public class ProductService {
         return responses;
     }
 
-    private String normalizeCategoryName(String rawCategory) {
-        if (Objects.isNull(rawCategory) || rawCategory.isBlank()) {
-            return "Cà phê";
+
+    // BỎ QUA một số sản phẩm Highlands không muốn import
+    private boolean shouldSkipHighlandsProduct(HighlandsProduct p) {
+        // Dùng normalizeText để bỏ dấu + viết hoa
+        String name = normalizeText(p.productName());
+
+        // Bỏ sản phẩm tên "CÀ PHÊ"
+        if (name.equals("CA PHE")) {
+            return true;
         }
-        return rawCategory.trim();
+
+        // nếu muốn bỏ luôn các sản phẩm giá 0 thì mở comment thêm:
+        // if (p.price() == null || BigDecimal.ZERO.compareTo(p.price()) == 0) {
+        //     return true;
+        // }
+
+        return false;
     }
-    // [THÊM MỚI] Cập nhật sản phẩm
+    // =============== PHÂN LOẠI CATEGORY ===============
+    private String normalizeCategoryName(String rawCategory, String productName) {
+        // Chuẩn hoá tên sản phẩm (bỏ dấu, viết hoa)
+        String normalizedProductName = normalizeText(productName);
+
+        // 0) ƯU TIÊN: các sản phẩm BÁNH / ĐỒ ĂN -> Khác
+        if (containsAny(normalizedProductName, List.of(
+                "BANH ",       // "BÁNH " (Bánh Mì, Bánh Ngọt,...)
+                " BANH",       // phòng trường hợp có khoảng trắng phía trước
+                "BANH MI",     // Bánh Mì
+                "BANH M",      // Bánh Mì (phòng lỗi dấu)
+                "MI QUE",      // Bánh Mì Que
+                "BREAD",
+                "CAKE",
+                "CAKES",
+                "CHEESE CAKE",
+                "CHEESECAKE",
+                "SANDWICH",
+                "BURGER",
+                "PASTRY",
+                "COOKIE",
+                "CROISSANT",
+                "MUFFIN"
+        ))) {
+            return "Khác";
+        }
+
+        // 1) Freeze
+        if (containsAny(normalizedProductName, List.of(
+                "FREEZE",
+                "DA XAY",
+                "COOKIES & CREAM",
+                "Cookies & Cream"
+        ))) {
+            return "Freeze";
+        }
+
+        // 2) Trà
+        if (containsAny(normalizedProductName, List.of(
+                "TRA ",
+                "TRA(",
+                "TRA_",
+                "TRA-",
+                " TRA",
+                "TEA",
+                "OOLONG",
+                "MATCHA",
+                "SEN VANG",
+                "CHANH",
+                "TAC"
+        ))) {
+            return "Trà";
+        }
+
+        // 3) Cà Phê
+        if (containsAny(normalizedProductName, List.of(
+                "CA PHE",
+                "COFFEE",
+                "LATTE",
+                "ESPRESSO",
+                "AMERICANO",
+                "CAPPUCCINO",
+                "MACCHIATO",
+                "MOCHA",
+                "PHINDI",
+                "COLD BREW",
+                "BAC XIU",
+                "PHIN"
+        ))) {
+            return "Cà Phê";
+        }
+
+
+        // 4) Fallback theo category gốc của Highlands nếu tên không đoán được
+        String normalizedCategory = normalizeText(rawCategory);
+        if (!normalizedCategory.isBlank()) {
+            if (normalizedCategory.contains("FREEZE")) {
+                return "Freeze";
+            }
+            if (normalizedCategory.contains("TRA")) {
+                return "Trà";
+            }
+            if (normalizedCategory.contains("CA PHE") || normalizedCategory.contains("NGUYEN BAN")) {
+                return "Cà Phê";
+            }
+        }
+
+        // 5) Còn lại cho vào Khác
+        return "Khác";
+    }
+
+
+    private boolean containsAny(String text, List<String> keywords) {
+        for (String k : keywords) {
+            if (text.contains(k)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String normalizeText(String text) {
+        if (Objects.isNull(text)) {
+            return "";
+        }
+        String cleaned = Normalizer.normalize(text, Normalizer.Form.NFD)
+                .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+        return cleaned.toUpperCase(Locale.ROOT);
+    }
+
+    // =============== UPDATE / DELETE ===============
+
     public ProductResponse updateProduct(String productId, ProductCreationRequest request) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
-        // Cập nhật thông tin cơ bản
         product.setProductName(request.getProductName());
         product.setPrice(request.getPrice());
         product.setAmount(request.getAmount());
 
-        // Cập nhật danh mục
         Category category = categoryRepository.findByCategoryName(request.getCategoryName())
                 .orElseThrow(() -> new RuntimeException("Category not found: " + request.getCategoryName()));
         product.setCategory(category);
 
-        // Cập nhật ảnh (Xóa ảnh cũ, thêm ảnh mới - cách đơn giản nhất)
         if (Objects.nonNull(request.getImages())) {
-            product.getImages().clear(); // Xóa ảnh cũ
+            product.getImages().clear();
             List<Image> newImages = request.getImages().stream()
                     .map(link -> Image.builder().imageLink(link).product(product).build())
                     .collect(Collectors.toList());
@@ -174,7 +312,6 @@ public class ProductService {
         return productMapper.toProductResponse(productRepository.save(product));
     }
 
-    // [THÊM MỚI] Xóa sản phẩm
     public void deleteProduct(String productId) {
         if (!productRepository.existsById(productId)) {
             throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);

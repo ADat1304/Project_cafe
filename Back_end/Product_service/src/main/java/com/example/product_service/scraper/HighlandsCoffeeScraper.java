@@ -20,36 +20,66 @@ import java.util.regex.Pattern;
 @Component
 public class HighlandsCoffeeScraper {
 
-    private static final Map<String, String> CATEGORY_URLS = Map.of(
-            "Cà Phê", "https://www.highlandscoffee.com.vn/vn/ca-phe.html",
-            "THỰC ĐƠN MÓN ĂN KHÁC (FOOD MENU)", "https://www.highlandscoffee.com.vn/vn/thuc-don-mon-an-khac-food-menu.html",
-            "MENU NGUYÊN BẢN", "https://www.highlandscoffee.com.vn/vn/menu-nguyen-ban.html",
-            "TINH HOA TRÀ HIGHLANDS", "https://www.highlandscoffee.com.vn/vn/tinh-hoa-tra-highlands.html",
-            "DÒNG CÀ PHÊ ĐẶC BIỆT", "https://www.highlandscoffee.com.vn/vn/dong-ca-phe-dac-biet.html",
-            "FREEZE", "https://www.highlandscoffee.com.vn/vn/freeze.html",
-            "TRÀ", "https://www.highlandscoffee.com.vn/vn/tra.html",
-            "KHÁC", "https://www.highlandscoffee.com.vn/vn/khac.html"
+    // Các URL menu của Highlands
+    private static final Map<String, List<String>> CATEGORY_URLS = Map.of(
+            "Cà Phê", List.of("https://www.highlandscoffee.com.vn/vn/ca-phe.html"),
+            "MENU NGUYÊN BẢN", List.of("https://www.highlandscoffee.com.vn/vn/menu-nguyen-ban.html"),
+            "TINH HOA TRÀ HIGHLANDS", List.of("https://www.highlandscoffee.com.vn/vn/tinh-hoa-tra-highlands.html"),
+            "DÒNG CÀ PHÊ ĐẶC BIỆT", List.of("https://www.highlandscoffee.com.vn/vn/dong-ca-phe-dac-biet.html"),
+            "FREEZE", List.of("https://www.highlandscoffee.com.vn/vn/freeze.html"),
+            "TRÀ", List.of("https://www.highlandscoffee.com.vn/vn/tra.html"),
+            "KHÁC", List.of("https://www.highlandscoffee.com.vn/vn/khac.html")
     );
+
     private static final Pattern DIGIT_PATTERN = Pattern.compile("[0-9]+([.,][0-9]{3})*");
 
     public List<HighlandsProduct> scrapeMenu() throws IOException {
         List<HighlandsProduct> products = new ArrayList<>();
-        for (Map.Entry<String, String> categoryEntry : CATEGORY_URLS.entrySet()) {
-            Document document = connect(categoryEntry.getValue());
+        // tránh trùng sản phẩm nếu xuất hiện ở nhiều layout
+        List<String> seenProductNames = new ArrayList<>();
+
+        for (Map.Entry<String, List<String>> categoryEntry : CATEGORY_URLS.entrySet()) {
+            String rawCategory = categoryEntry.getKey();
+
+            Document document = connectWithFallbacks(categoryEntry.getValue());
+            if (document == null) {
+                log.warn("Skipping category {} because all URLs failed", rawCategory);
+                continue;
+            }
+
             Elements productCards = locateProductCards(document);
             for (Element card : productCards) {
                 String productName = extractProductName(card);
-                if (productName.isBlank()) {
+                if (productName.isBlank() || seenProductNames.contains(productName)) {
                     continue;
                 }
+
                 BigDecimal price = extractPrice(card);
                 String imageUrl = extractImage(card);
-                products.add(new HighlandsProduct(categoryEntry.getKey(), productName, price, imageUrl));
-            }
 
+                // nếu thiếu giá / ảnh thì vào trang chi tiết
+                if (price.equals(BigDecimal.ZERO) || imageUrl.isBlank()) {
+                    HighlandsProduct details = fetchFromDetailPage(card, rawCategory, productName);
+                    if (details != null) {
+                        price = details.price();
+                        imageUrl = details.imageUrl();
+                    }
+                }
+
+                products.add(new HighlandsProduct(
+                        rawCategory,   // category gốc, phân loại chi tiết sẽ xử lý ở ProductService
+                        productName,
+                        price,
+                        imageUrl
+                ));
+                seenProductNames.add(productName);
+            }
         }
+
         return products;
     }
+
+    // ================= HTTP =================
 
     private Document connect(String url) throws IOException {
         Connection.Response response = Jsoup.connect(url)
@@ -72,6 +102,19 @@ public class HighlandsCoffeeScraper {
         return response.parse();
     }
 
+    private Document connectWithFallbacks(List<String> urls) {
+        for (String url : urls) {
+            try {
+                return connect(url);
+            } catch (IOException ex) {
+                log.warn("Failed to fetch Highlands category from {}: {}", url, ex.getMessage());
+            }
+        }
+        return null;
+    }
+
+    // =============== PARSING HTML ===============
+
     private Elements locateProductCards(Document document) {
         Elements cards = document.select(
                 ".product-item, li.product-item, .product-item-list .item, .product-list .item, " +
@@ -89,6 +132,32 @@ public class HighlandsCoffeeScraper {
         return document.select("article, .item");
     }
 
+    private HighlandsProduct fetchFromDetailPage(Element card, String categoryName, String fallbackName) {
+        Element linkElement = card.selectFirst("a[href]");
+        if (linkElement == null) {
+            return null;
+        }
+
+        String detailUrl = linkElement.absUrl("href");
+        if (detailUrl.isBlank()) {
+            return null;
+        }
+
+        try {
+            Document detailPage = connect(detailUrl);
+            String productName = extractDetailName(detailPage, fallbackName);
+            BigDecimal price = extractPrice(detailPage);
+            if (price.equals(BigDecimal.ZERO)) {
+                price = extractPriceFromScripts(detailPage.html());
+            }
+            String imageUrl = extractDetailImage(detailPage);
+            return new HighlandsProduct(categoryName, productName, price, imageUrl);
+        } catch (Exception ex) {
+            log.warn("Failed to fetch detail page for {}: {}", detailUrl, ex.getMessage());
+            return null;
+        }
+    }
+
     private String extractProductName(Element card) {
         Element title = card.selectFirst(".product-name, .title, h3, h4, a[title]");
         if (title != null && !title.text().isBlank()) {
@@ -97,8 +166,22 @@ public class HighlandsCoffeeScraper {
         return card.text().trim();
     }
 
+    private String extractDetailName(Document detailPage, String fallback) {
+        Element title = detailPage.selectFirst("h1, .product-name, .product-detail-name, meta[property=og:title]");
+        if (title != null) {
+            String text = title.hasAttr("content") ? title.attr("content") : title.text();
+            if (!text.isBlank()) {
+                return text.trim();
+            }
+        }
+        return fallback;
+    }
+
     private BigDecimal extractPrice(Element card) {
-        Element priceElement = card.selectFirst(".price, .product-price, .prize, .gia, [itemprop=price], [data-price], [data-price-vnd]");
+        Element priceElement = card.selectFirst(
+                ".price, .product-price, .prize, .gia, [itemprop=price], [data-price], [data-price-vnd]"
+        );
+
         String priceText = "";
 
         if (priceElement != null) {
@@ -134,6 +217,18 @@ public class HighlandsCoffeeScraper {
         }
     }
 
+    private BigDecimal extractPriceFromScripts(String html) {
+        Matcher matcher = Pattern.compile("\\\"price\\\"\\s*:\\s*\\\"?([0-9.,]+)").matcher(html);
+        if (matcher.find()) {
+            String numeric = matcher.group(1).replace(".", "").replace(",", "");
+            try {
+                return new BigDecimal(numeric);
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
     private String extractImage(Element card) {
         Element image = card.selectFirst("img, picture source");
         if (image == null) {
@@ -144,5 +239,14 @@ public class HighlandsCoffeeScraper {
                 : image.hasAttr("srcset") ? image.absUrl("srcset")
                 : image.absUrl("src");
         return imageUrl == null ? "" : imageUrl;
+    }
+
+    private String extractDetailImage(Document detailPage) {
+        Element image = detailPage.selectFirst("meta[property=og:image], .product-image img, img[itemprop=image]");
+        if (image == null) {
+            return "";
+        }
+        String url = image.hasAttr("content") ? image.absUrl("content") : image.absUrl("src");
+        return url == null ? "" : url;
     }
 }
