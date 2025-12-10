@@ -58,6 +58,15 @@ public class EsbProductController {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
         return ResponseEntity.ok(productClient.incrementInventory(productId, request, token));
     }
+    @PostMapping("/inventory/reset")
+    public ResponseEntity<List<ProductResponse>> resetAllInventory(
+            @RequestBody(required = false) InventoryUpdateRequest request,
+            @RequestHeader(name = "Authorization", required = false) String authorization
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        Integer quantity = request != null ? request.getQuantity() : null;
+        return ResponseEntity.ok(productClient.resetAllInventory(quantity, token));
+    }
     @GetMapping("/categories")
     public ResponseEntity<List<String>> getAllCategories() {
         return ResponseEntity.ok(productClient.getAllCategories());

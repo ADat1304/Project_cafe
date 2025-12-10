@@ -1,7 +1,15 @@
 // src/pages/ProductsPage.jsx
 import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
-import { createProduct, fetchProducts, fetchCategories, updateProduct, deleteProduct, importHighlandsProducts } from "../utils/api.js";
+import {
+    createProduct,
+    fetchProducts,
+    fetchCategories,
+    updateProduct,
+    deleteProduct,
+    importHighlandsProducts,
+    resetAllProductInventory,
+} from "../utils/api.js";
 import { getAuth, getScopesFromToken } from "../utils/auth.js";
 
 const formatCurrency = (value) =>
@@ -9,6 +17,8 @@ const formatCurrency = (value) =>
 
 export default function ProductsPage() {
     const [products, setProducts] = useState([]);
+    const [allProducts, setAllProducts] = useState([]);
+    const [selectedCategory, setSelectedCategory] = useState("all");
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(false);
 
@@ -35,12 +45,25 @@ export default function ProductsPage() {
     const scopes = useMemo(() => getScopesFromToken(token), [token]);
     const isAdmin = scopes.includes("ADMIN");
 
+    const syncProductsByCategory = (list, categoryName = selectedCategory) => {
+        const normalizedCategory = (categoryName || "all").toLowerCase();
+        const filtered = normalizedCategory === "all"
+            ? list
+            : list.filter((p) => (p.categoryName || "").toLowerCase() === normalizedCategory);
+        setProducts(filtered);
+        setSelectedCategory(categoryName || "all");
+    };
+
     const loadProducts = async () => {
         setLoading(true);
         setError("");
         try {
             const data = await fetchProducts(token);
-            setProducts(Array.isArray(data) ? data : []);
+            const list = Array.isArray(data) ? data : [];
+            setAllProducts(list);
+            const uniqueCats = Array.from(new Set(list.map((i) => i.categoryName).filter(Boolean)));
+            setCategories(["all", ...uniqueCats]);
+            syncProductsByCategory(list, selectedCategory);
         } catch (err) {
             setError(err.message || "Không thể tải danh sách sản phẩm");
         } finally {
@@ -51,7 +74,8 @@ export default function ProductsPage() {
     const loadCategories = async () => {
         try {
             const data = await fetchCategories(token);
-            setCategories(Array.isArray(data) ? data : []);
+            const list = Array.isArray(data) ? data : [];
+            setCategories(["all", ...list]);
         } catch (err) {
             console.warn("Không thể tải danh mục:", err);
         }
@@ -92,7 +116,30 @@ export default function ProductsPage() {
         const { name, value } = evt.target;
         setForm((prev) => ({ ...prev, [name]: value }));
     };
+    const handleCategoryFilterChange = (value) => {
+        setSelectedCategory(value);
+        syncProductsByCategory(allProducts, value);
+    };
 
+    const handleResetInventory = async () => {
+        if (!window.confirm("Bạn có chắc muốn đặt lại tồn kho tất cả sản phẩm về 100?")) {
+            return;
+        }
+
+        setSubmitting(true);
+        setActionError("");
+        setActionSuccess("");
+
+        try {
+            await resetAllProductInventory(100, token);
+            setActionSuccess("Đã đặt lại kho của tất cả sản phẩm về 100. Kho sẽ tự động làm mới mỗi ngày.");
+            await loadProducts();
+        } catch (err) {
+            setActionError(err.message || "Không thể đặt lại kho");
+        } finally {
+            setSubmitting(false);
+        }
+    };
     const handleEditClick = (product) => {
         setEditingProduct(product);
         const imgStr = product.images && product.images.length > 0 ? product.images.join(",") : "";
@@ -102,7 +149,7 @@ export default function ProductsPage() {
             price: product.price,
             amount: product.amount,
             categoryName: product.categoryName || "",
-            images: imgStr
+            images: imgStr,
         });
 
         if (imgStr) {
@@ -202,7 +249,16 @@ export default function ProductsPage() {
                                 )}
                             </button>
                         )}
-
+                        {isAdmin && (
+                            <button
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={handleResetInventory}
+                                disabled={loading || importing || submitting}
+                            >
+                                <i className="bi bi-arrow-counterclockwise me-1"></i>
+                                Reset kho về 100
+                            </button>
+                        )}
                         <button className="btn btn-outline-secondary btn-sm" onClick={loadProducts} disabled={loading || importing}>
                             <i className="bi bi-arrow-clockwise me-1"></i>
                             Làm mới
@@ -216,6 +272,28 @@ export default function ProductsPage() {
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body">
                             {error && <div className="alert alert-danger py-2 small">{error}</div>}
+                            <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+                                <div className="d-flex align-items-center gap-2 flex-wrap">
+                                    <span className="fw-semibold mb-0">Lọc theo danh mục:</span>
+                                    <div className="d-flex flex-wrap gap-2">
+                                        {categories.map((cat) => (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                className={`btn btn-sm ${selectedCategory === cat ? "btn-success" : "btn-light border"}`}
+                                                onClick={() => handleCategoryFilterChange(cat)}
+                                                disabled={loading || importing}
+                                            >
+                                                {cat === "all" ? "Tất cả" : cat}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="text-muted small fst-italic">
+                                    Kho sản phẩm sẽ tự động đặt lại về 100 vào mỗi ngày.
+                                </div>
+                            </div>
 
                             {/* [THÊM MỚI] Thông báo import */}
                             {importing && (
@@ -343,7 +421,9 @@ export default function ProductsPage() {
                                                 onChange={handleChange}
                                             >
                                                 <option value="">-- Chọn danh mục --</option>
-                                                {categories.map((cat, index) => (
+                                                {categories
+                                                    .filter((cat) => cat !== "all")
+                                                    .map((cat, index) => (
                                                     <option key={index} value={cat}>
                                                         {cat}
                                                     </option>

@@ -118,6 +118,12 @@ export const fetchProductsByCategory = (categoryName, token) => {
     return requestGateway(`${ESB_PREFIX}/products/category/${categoryPath}`, { token });
 };
 
+export const resetAllProductInventory = (quantity = 100, token) =>
+    requestGateway(`${ESB_PREFIX}/products/inventory/reset`, {
+        method: "POST",
+        body: { quantity },
+        token,
+    });
 
 // ===== Tables =====
 export const fetchTables = (token) => requestGateway(`${ESB_PREFIX}/tables`, { token });

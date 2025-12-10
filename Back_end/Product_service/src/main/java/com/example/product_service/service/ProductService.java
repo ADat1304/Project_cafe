@@ -13,9 +13,11 @@ import com.example.product_service.repository.CategoryRepository;
 import com.example.product_service.repository.ProductRepository;
 import com.example.product_service.scraper.HighlandsCoffeeScraper;
 import com.example.product_service.scraper.HighlandsProduct;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 
@@ -103,7 +105,24 @@ public class ProductService {
                 .distinct()
                 .collect(Collectors.toList());
     }
+    @Transactional
+    public List<ProductResponse> resetAllInventoryTo(int quantity) {
+        if (quantity < 0) {
+            throw new AppException(ErrorCode.INVALID_KEY);
+        }
 
+        List<Product> products = productRepository.findAll();
+        products.forEach(product -> product.setAmount(quantity));
+        return productRepository.saveAll(products)
+                .stream()
+                .map(productMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Scheduled(cron = "0 0 0 * * *")
+    public void resetInventoryDaily() {
+        resetAllInventoryTo(100);
+    }
     // ================== IMPORT HIGHLANDS ==================
 
     public List<ProductResponse> importHighlandsCoffeeMenu() {

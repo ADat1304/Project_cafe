@@ -141,6 +141,22 @@ public class ProductClient {
                 Void.class
         );
     }
+
+    public List<ProductResponse> resetAllInventory(Integer quantity, String token) {
+        HttpHeaders headers = defaultHeaders(token);
+        InventoryUpdateRequest payload = InventoryUpdateRequest.builder()
+                .quantity(quantity != null ? quantity : 100)
+                .build();
+
+        ResponseEntity<ApiResponse<List<ProductResponse>>> response = restTemplate.exchange(
+                endpointsProperties.getProduct() + "/products/inventory/reset",
+                HttpMethod.POST,
+                new HttpEntity<>(payload, headers),
+                new ParameterizedTypeReference<>() {}
+        );
+
+        return response.getBody() != null ? response.getBody().getResult() : List.of();
+    }
     public List<ProductResponse> importHighlands(String token) {
         HttpHeaders headers = defaultHeaders(token);
         HttpEntity<Void> entity = new HttpEntity<>(headers);

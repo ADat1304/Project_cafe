@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @RestController
@@ -73,6 +74,13 @@ public class ProductController {
         ProductResponse product = productService.incrementInventory(productId, request);
         return ApiResponse.<ProductResponse>builder()
                 .result(product)
+                .build();
+    }
+    @PostMapping("/inventory/reset")
+    public ApiResponse<List<ProductResponse>> resetInventory(@RequestBody(required = false) InventoryUpdateRequest request) {
+        int quantity = Objects.nonNull(request) ? request.getQuantity() : 100;
+        return ApiResponse.<List<ProductResponse>>builder()
+                .result(productService.resetAllInventoryTo(quantity))
                 .build();
     }
     @GetMapping("/categories")
