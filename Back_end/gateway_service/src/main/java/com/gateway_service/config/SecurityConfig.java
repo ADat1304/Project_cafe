@@ -50,9 +50,9 @@ public class SecurityConfig {
 
                         // 2. CẤU HÌNH QUYỀN SẢN PHẨM (Sửa đổi tại đây)
                         // Cho phép cả ADMIN và USER được Thêm (POST), Sửa (PUT), Xóa (DELETE)
-                        .requestMatchers(HttpMethod.POST, "/esb/products/**").hasAnyAuthority("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.PUT, "/esb/products/**").hasAnyAuthority("ADMIN", "USER")
-                        .requestMatchers(HttpMethod.DELETE, "/esb/products/**").hasAnyAuthority("ADMIN", "USER")
+                        .requestMatchers(HttpMethod.POST, "/esb/products/**").hasAnyAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/esb/products/**").hasAnyAuthority("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/esb/products/**").hasAnyAuthority("ADMIN")
 
                         // Ai cũng có thể xem danh sách sản phẩm (GET)
                         .requestMatchers(HttpMethod.GET, "/esb/products/**").permitAll()
