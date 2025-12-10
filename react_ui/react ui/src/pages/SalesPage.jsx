@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import { createOrder, fetchOrders, fetchProducts, updateOrderStatus, updateTableStatus, fetchTables, fetchPaymentMethods } from "../utils/api.js";
 import { getAuth } from "../utils/auth.js";
+import payCardQr from "../assets/QR.jpg"
 
 const formatCurrency = (value) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(Number(value || 0));
 
@@ -43,7 +44,8 @@ export default function SalesPage() {
     const [creatingOrder, setCreatingOrder] = useState(false);
     const [updatingTable, setUpdatingTable] = useState(false);
     const [closingOrderId, setClosingOrderId] = useState(null);
-    const [orderForm, setOrderForm] = useState(createEmptyOrderForm);
+    const [orderForm, setOrderForm] = useState(() => createEmptyOrderForm());
+
 
     const [createOrderError, setCreateOrderError] = useState("");
     const [createOrderSuccess, setCreateOrderSuccess] = useState("");
@@ -132,6 +134,7 @@ export default function SalesPage() {
     };
 
     const selectedOrder = orders.find(o => o.orderId === selectedOrderId) || (orders.length ? orders[0] : null);
+    const isPayCardMethod = (orderForm.paymentMethodType || "").toLowerCase() === "pay card";
 
     const updateItem = (idx, field, value) => {
         setOrderForm(prev => {
@@ -162,7 +165,7 @@ export default function SalesPage() {
 
             await createOrder(payload, token);
             setCreateOrderSuccess("Tạo đơn thành công!");
-            setOrderForm(createEmptyOrderForm());
+           setOrderForm(createEmptyOrderForm());
             setShowCreateModal(false);
             await loadOrders();
             await loadTables();
@@ -341,7 +344,10 @@ export default function SalesPage() {
 
                                     <div className="mt-auto pt-3 border-top">
                                         <div className="d-flex justify-content-between align-items-center mb-3">
-                                            <span className="text-muted">Tổng cộng:</span>
+                                             <div>
+                                                 <div className="text-muted">Tổng cộng:</div>
+                                                      <div className="small text-secondary">Thanh toán: {selectedOrder.paymentMethodType || "-"}</div>
+                                             </div>
                                             {/* Tổng tiền vẫn lấy từ đơn hàng gốc để đảm bảo chính xác khi thanh toán */}
                                             <span className="fs-4 fw-bold text-success">{formatCurrency(selectedOrder.totalAmount)}</span>
                                         </div>
@@ -351,9 +357,13 @@ export default function SalesPage() {
                                                     {closingOrderId === selectedOrder.orderId ? "Đang xử lý..." : "Thanh toán & Đóng đơn"}
                                                 </button>
                                             )}
-                                            <button className="btn btn-light border btn-sm" onClick={handleMarkTableBusy} disabled={updatingTable}>
-                                                Cập nhật trạng thái bàn
-                                            </button>
+                                            {selectedOrder.status !== 'CLOSE' ? (
+                                                <button className="btn btn-light border btn-sm" onClick={handleMarkTableBusy} disabled={updatingTable}>
+                                                    Cập nhật trạng thái bàn
+                                                </button>
+                                            ) : (
+                                                <div className="text-muted text-center small fst-italic">Đơn đã đóng - không thể cập nhật trạng thái bàn</div>
+                                            )}
                                         </div>
                                     </div>
                                 </>
@@ -379,76 +389,170 @@ export default function SalesPage() {
                                 {createOrderSuccess && <div className="alert alert-success py-2">{createOrderSuccess}</div>}
 
                                 <form onSubmit={handleCreateOrder}>
-                                    <div className="row g-3 mb-3">
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-muted">Bàn số</label>
-                                            <select className="form-select" value={orderForm.tableNumber} required
-                                                onChange={e => setOrderForm({...orderForm, tableNumber: e.target.value})}>
-                                                <option value="">-- Chọn bàn --</option>
-                                                {tables.map(t => (
-                                                    <option key={t.tableId} value={t.tableNumber}>
-                                                        Bàn {t.tableNumber} ({t.status === 0 ? 'Trống' : 'Bận'})
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-muted">Thanh toán</label>
-                                            <select className="form-select" value={orderForm.paymentMethodType} required
-                                                onChange={e => setOrderForm({...orderForm, paymentMethodType: e.target.value})}>
-                                                <option value="">-- Chọn phương thức --</option>
-                                                {paymentMethods.map(pm => (
-                                                    <option key={pm.paymentMethodID} value={pm.paymentMethodType}>{pm.paymentMethodType}</option>
-                                                ))}
-                                            </select>
-                                        </div>
+                                  {/* HÀNG: BÀN + THANH TOÁN */}
+                                  <div className="row g-3 mb-3">
+                                    {/* BÀN SỐ */}
+                                    <div className="col-md-6">
+                                      <label className="form-label small fw-bold text-muted">Bàn số</label>
+                                      <select
+                                        className="form-select"
+                                        value={orderForm.tableNumber}
+                                        required
+                                        onChange={(e) =>
+                                          setOrderForm({
+                                            ...orderForm,
+                                            tableNumber: e.target.value,
+                                          })
+                                        }
+                                      >
+                                        <option value="">-- Chọn bàn --</option>
+                                        {tables.map((t) => (
+                                          <option
+                                            key={t.tableID}
+                                            value={t.tableNumber ?? t.tableID}
+                                          >
+                                            {t.tableNumber
+                                              ? `Bàn ${t.tableNumber}`
+                                              : t.tableName || t.tableID}
+                                          </option>
+                                        ))}
+                                      </select>
                                     </div>
 
-                                    <div className="bg-light p-3 rounded mb-3">
-                                        <label className="form-label small fw-bold text-muted mb-2">Chi tiết món</label>
-                                        {orderForm.items.map((item, idx) => {
-                                            const itemUnitPrice = getProductPrice(item.productName);
-                                            const itemTotal = itemUnitPrice * item.quantity;
-                                            return (
-                                                <div key={idx} className="row g-2 align-items-center mb-2">
-                                                    <div className="col-5">
-                                                        <select className="form-select form-select-sm" value={item.productName} required
-                                                            onChange={e => updateItem(idx, 'productName', e.target.value)}>
-                                                            <option value="">Chọn món...</option>
-                                                            {allProducts.map(p => (
-                                                                <option key={p.productID} value={p.productName}>{p.productName}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div className="col-2">
-                                                        <input type="number" className="form-control form-control-sm text-center" min="1" value={item.quantity}
-                                                            onChange={e => updateItem(idx, 'quantity', e.target.value)} />
-                                                    </div>
-                                                    <div className="col-2 text-end small fw-bold text-primary">
-                                                        {item.productName ? formatCurrency(itemTotal) : "-"}
-                                                    </div>
-                                                    <div className="col-2">
-                                                        <input type="text" className="form-control form-control-sm" placeholder="Ghi chú" value={item.notes}
-                                                            onChange={e => updateItem(idx, 'notes', e.target.value)} />
-                                                    </div>
-                                                    <div className="col-1 text-end">
-                                                        <button type="button" className="btn btn-outline-danger btn-sm border-0" onClick={() => removeItem(idx)}
-                                                            disabled={orderForm.items.length === 1}>
-                                                            <i className="bi bi-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                        <button type="button" className="btn text-success btn-link btn-sm text-decoration-none px-0" onClick={addItem}>+ Thêm món khác</button>
-                                    </div>
+                                    {/* THANH TOÁN */}
+                                    <div className="col-md-6">
+                                      <label className="form-label small fw-bold text-muted">Thanh toán</label>
+                                      <div className="d-flex align-items-center gap-3 flex-wrap">
+                                        <select
+                                          className="form-select flex-fill"
+                                          value={orderForm.paymentMethodType}
+                                          required
+                                          onChange={(e) =>
+                                            setOrderForm({
+                                              ...orderForm,
+                                              paymentMethodType: e.target.value,
+                                            })
+                                          }
+                                        >
+                                          <option value="">-- Chọn phương thức --</option>
+                                          {paymentMethods.map((pm) => (
+                                            <option
+                                              key={pm.paymentMethodID}
+                                              value={pm.paymentMethodType}
+                                            >
+                                              {pm.paymentMethodType}
+                                            </option>
+                                          ))}
+                                        </select>
 
-                                    <div className="d-grid">
-                                        <button type="submit" className="btn btn-success" disabled={creatingOrder}>
-                                            {creatingOrder ? "Đang xử lý..." : "Lưu & Tạo Hóa Đơn"}
-                                        </button>
+                                        {isPayCardMethod && (
+                                          <div
+                                            className="border rounded p-2 bg-light text-center"
+                                            style={{ minWidth: 120 }}
+                                          >
+                                            <div className="small text-muted mb-1">QR Pay</div>
+                                            <img
+                                              src={payCardQr}
+                                              alt="QR Pay Card"
+                                              className="img-fluid rounded"
+                                            />
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
+                                  </div>
+
+                                  {/* CHI TIẾT MÓN */}
+                                  <div className="bg-light p-3 rounded mb-3">
+                                    <label className="form-label small fw-bold text-muted mb-2">
+                                      Chi tiết món
+                                    </label>
+                                    {orderForm.items.map((item, idx) => {
+                                      const itemUnitPrice = getProductPrice(item.productName);
+                                      const itemTotal = itemUnitPrice * item.quantity;
+                                      return (
+                                        <div
+                                          key={idx}
+                                          className="row g-2 align-items-center mb-2"
+                                        >
+                                          <div className="col-5">
+                                            <select
+                                              className="form-select form-select-sm"
+                                              value={item.productName}
+                                              required
+                                              onChange={(e) =>
+                                                updateItem(idx, "productName", e.target.value)
+                                              }
+                                            >
+                                              <option value="">Chọn món...</option>
+                                              {allProducts.map((p) => (
+                                                <option
+                                                  key={p.productID}
+                                                  value={p.productName}
+                                                >
+                                                  {p.productName}
+                                                </option>
+                                              ))}
+                                            </select>
+                                          </div>
+                                          <div className="col-2">
+                                            <input
+                                              type="number"
+                                              className="form-control form-control-sm text-center"
+                                              min="1"
+                                              value={item.quantity}
+                                              onChange={(e) =>
+                                                updateItem(idx, "quantity", e.target.value)
+                                              }
+                                            />
+                                          </div>
+                                          <div className="col-2 text-end small fw-bold text-primary">
+                                            {item.productName ? formatCurrency(itemTotal) : "-"}
+                                          </div>
+                                          <div className="col-2">
+                                            <input
+                                              type="text"
+                                              className="form-control form-control-sm"
+                                              placeholder="Ghi chú"
+                                              value={item.notes}
+                                              onChange={(e) =>
+                                                updateItem(idx, "notes", e.target.value)
+                                              }
+                                            />
+                                          </div>
+                                          <div className="col-1 text-end">
+                                            <button
+                                              type="button"
+                                              className="btn btn-outline-danger btn-sm border-0"
+                                              onClick={() => removeItem(idx)}
+                                              disabled={orderForm.items.length === 1}
+                                            >
+                                              <i className="bi bi-trash"></i>
+                                            </button>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                    <button
+                                      type="button"
+                                      className="btn text-success btn-link btn-sm text-decoration-none px-0"
+                                      onClick={addItem}
+                                    >
+                                      + Thêm món khác
+                                    </button>
+                                  </div>
+
+                                  <div className="d-grid">
+                                    <button
+                                      type="submit"
+                                      className="btn btn-success"
+                                      disabled={creatingOrder}
+                                    >
+                                      {creatingOrder ? "Đang xử lý..." : "Lưu & Tạo Hóa Đơn"}
+                                    </button>
+                                  </div>
                                 </form>
+
                             </div>
                         </div>
                     </div>
