@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,28 +20,39 @@ import java.util.regex.Pattern;
 @Component
 public class HighlandsCoffeeScraper {
 
-    private static final String TARGET_URL = "https://www.highlandscoffee.com.vn/vn/ca-phe.html";
+    private static final Map<String, String> CATEGORY_URLS = Map.of(
+            "Cà Phê", "https://www.highlandscoffee.com.vn/vn/ca-phe.html",
+            "THỰC ĐƠN MÓN ĂN KHÁC (FOOD MENU)", "https://www.highlandscoffee.com.vn/vn/thuc-don-mon-an-khac-food-menu.html",
+            "MENU NGUYÊN BẢN", "https://www.highlandscoffee.com.vn/vn/menu-nguyen-ban.html",
+            "TINH HOA TRÀ HIGHLANDS", "https://www.highlandscoffee.com.vn/vn/tinh-hoa-tra-highlands.html",
+            "DÒNG CÀ PHÊ ĐẶC BIỆT", "https://www.highlandscoffee.com.vn/vn/dong-ca-phe-dac-biet.html",
+            "FREEZE", "https://www.highlandscoffee.com.vn/vn/freeze.html",
+            "TRÀ", "https://www.highlandscoffee.com.vn/vn/tra.html",
+            "KHÁC", "https://www.highlandscoffee.com.vn/vn/khac.html"
+    );
     private static final Pattern DIGIT_PATTERN = Pattern.compile("[0-9]+([.,][0-9]{3})*");
 
     public List<HighlandsProduct> scrapeMenu() throws IOException {
-        Document document = connect();
-        Elements productCards = locateProductCards(document);
         List<HighlandsProduct> products = new ArrayList<>();
-        for (Element card : productCards) {
-            String productName = extractProductName(card);
-            if (productName.isBlank()) {
-                continue;
+        for (Map.Entry<String, String> categoryEntry : CATEGORY_URLS.entrySet()) {
+            Document document = connect(categoryEntry.getValue());
+            Elements productCards = locateProductCards(document);
+            for (Element card : productCards) {
+                String productName = extractProductName(card);
+                if (productName.isBlank()) {
+                    continue;
+                }
+                BigDecimal price = extractPrice(card);
+                String imageUrl = extractImage(card);
+                products.add(new HighlandsProduct(categoryEntry.getKey(), productName, price, imageUrl));
             }
-            String categoryName = resolveCategoryName(card).orElse("Cà phê");
-            BigDecimal price = extractPrice(card);
-            String imageUrl = extractImage(card);
-            products.add(new HighlandsProduct(categoryName, productName, price, imageUrl));
+
         }
         return products;
     }
 
-    private Document connect() throws IOException {
-        Connection.Response response = Jsoup.connect(TARGET_URL)
+    private Document connect(String url) throws IOException {
+        Connection.Response response = Jsoup.connect(url)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36")
                 .referrer("https://www.google.com/")
                 .header("accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
@@ -76,29 +87,6 @@ public class HighlandsCoffeeScraper {
         }
 
         return document.select("article, .item");
-    }
-
-    private Optional<String> resolveCategoryName(Element card) {
-        for (Element ancestor : card.parents()) {
-            Element heading = selectDirectHeading(ancestor);
-            if (heading != null && !heading.text().isBlank()) {
-                return Optional.of(heading.text().trim());
-            }
-
-            Element previousHeading = ancestor.previousElementSibling();
-            while (previousHeading != null) {
-                Element siblingHeading = selectDirectHeading(previousHeading);
-                if (siblingHeading != null && !siblingHeading.text().isBlank()) {
-                    return Optional.of(siblingHeading.text().trim());
-                }
-                previousHeading = previousHeading.previousElementSibling();
-            }
-        }
-        return Optional.empty();
-    }
-
-    private Element selectDirectHeading(Element element) {
-        return element.selectFirst("> h2, > h3, > .title, > .heading");
     }
 
     private String extractProductName(Element card) {

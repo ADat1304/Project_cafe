@@ -104,7 +104,8 @@ public class ProductService {
         try {
             scrapedProducts = highlandsCoffeeScraper.scrapeMenu();
         } catch (Exception ex) {
-            throw new AppException(ErrorCode.SCRAPE_FAILED);
+            throw new AppException(ErrorCode.SCRAPE_FAILED,
+                    String.format("Failed to scrape Highlands Coffee menu: %s", ex.getMessage()));
         }
 
         Map<String, Category> categoryCache = new HashMap<>();
