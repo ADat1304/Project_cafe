@@ -178,3 +178,16 @@ export const deleteProduct = (productId, token) =>
      };
  export const importHighlandsProducts = (token) =>
      requestGateway(`${ESB_PREFIX}/products/import/highlands`, { method: "POST", token });
+export const addOrderItem = (orderId, data, token) =>
+    requestGateway(`${ESB_PREFIX}/orders/${orderId}/items`, {
+        method: "POST",
+        body: data,
+        token,
+    });
+
+export const decreaseOrderItem = (orderId, data, token) =>
+    requestGateway(`${ESB_PREFIX}/orders/${orderId}/items/decrease`, {
+        method: "POST",
+        body: data,
+        token,
+    });

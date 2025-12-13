@@ -48,6 +48,9 @@ public class SecurityConfig {
                         // 1. Cho phép truy cập công khai các endpoint Auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
 
+                        // Cho phép mọi người thực hiện preflight CORS
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // 2. CẤU HÌNH QUYỀN SẢN PHẨM (Sửa đổi tại đây)
                         // Cho phép cả ADMIN và USER được Thêm (POST), Sửa (PUT), Xóa (DELETE)
                         .requestMatchers(HttpMethod.POST, "/esb/products/**").hasAnyAuthority("ADMIN")

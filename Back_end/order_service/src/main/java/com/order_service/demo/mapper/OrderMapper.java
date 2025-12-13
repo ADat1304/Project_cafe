@@ -35,7 +35,7 @@ public interface OrderMapper {
                 .collect(Collectors.toList());
     }
 
-
+    @Mapping(target = "productId", source = "productId")
     @Mapping(target = "productName", source = "productName")
     @Mapping(target = "lineTotal", expression = "java(calculateLineTotal(detail))")
     OrderItemResponse toOrderItemResponse(OrderDetail detail);

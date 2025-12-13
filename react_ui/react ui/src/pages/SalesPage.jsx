@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import PageHeader from "../components/PageHeader.jsx";
 import {
     createOrder,
+    addOrderItem,
+    decreaseOrderItem,
     fetchOrders,
     fetchProducts,
     updateOrderStatus,
@@ -67,6 +69,10 @@ export default function SalesPage() {
 
     // Panel QR Pay Card
     const [showQrPanel, setShowQrPanel] = useState(false);
+
+    // Thêm/xóa món cho đơn đang mở
+    const [itemForm, setItemForm] = useState({ productName: "", quantity: 1, notes: "" });
+    const [itemUpdating, setItemUpdating] = useState(false);
 
     // --- Helper: Lấy giá sản phẩm ---
     const getProductPrice = (productName) => {
@@ -163,6 +169,10 @@ export default function SalesPage() {
     useEffect(() => {
         syncFilteredOrders(allOrders, selectedDate);
     }, [selectedDate]);
+
+    useEffect(() => {
+        setItemForm({ productName: "", quantity: 1, notes: "" });
+    }, [selectedOrderId]);
 
     const handleCategoryChange = (cat) => {
         setSelectedCategory(cat);
@@ -282,6 +292,57 @@ export default function SalesPage() {
         }
     };
 
+const handleAddItemToOrder = async (e) => {
+        e?.preventDefault();
+        if (!selectedOrderId) return;
+
+        setActionError("");
+        setActionMessage("");
+        setItemUpdating(true);
+
+        try {
+            const payload = {
+                productName: itemForm.productName,
+                quantity: Number(itemForm.quantity),
+                notes: itemForm.notes?.trim(),
+            };
+
+            if (!payload.productName || payload.quantity <= 0) {
+                throw new Error("Chọn món và số lượng hợp lệ");
+            }
+
+            await addOrderItem(selectedOrderId, payload, token);
+            setActionMessage("Đã thêm món vào đơn hàng");
+            setItemForm({ productName: "", quantity: 1, notes: "" });
+            await loadOrders();
+        } catch (err) {
+            setActionError(err.message || "Không thể thêm món");
+        } finally {
+            setItemUpdating(false);
+        }
+    };
+
+    const handleDecreaseItem = async (productName) => {
+        if (!selectedOrderId) return;
+
+        setActionError("");
+        setActionMessage("");
+        setItemUpdating(true);
+
+        try {
+            await decreaseOrderItem(
+                selectedOrderId,
+                { productName, quantity: 1 },
+                token
+            );
+            setActionMessage("Đã giảm số lượng món");
+            await loadOrders();
+        } catch (err) {
+            setActionError(err.message || "Không thể giảm số lượng");
+        } finally {
+            setItemUpdating(false);
+        }
+    };
     return (
         <div>
             <PageHeader
@@ -508,8 +569,22 @@ export default function SalesPage() {
                                                             )}
                                                         </td>
                                                         <td className="text-center text-muted">
-                                                            {item.quantity} x{" "}
-                                                            {formatCurrency(displayPrice || 0)}
+                                      <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                                                                                                      {selectedOrder.status === "OPEN" && (
+                                                                                                          <button
+                                                                                                              className="btn btn-outline-danger btn-sm"
+                                                                                                              type="button"
+                                                                                                              disabled={itemUpdating}
+                                                                                                              onClick={() => handleDecreaseItem(item.productName)}
+                                                                                                          >
+                                                                                                              <i className="bi bi-dash"></i>
+                                                                                                          </button>
+                                                                                                      )}
+                                                                                                      <span>
+                                                                                                          {item.quantity} x{" "}
+                                                                                                          {formatCurrency(displayPrice || 0)}
+                                                                                                      </span>
+                                                                                                  </div>
                                                         </td>
                                                         <td className="text-end fw-bold text-dark">
                                                             {formatCurrency(
@@ -524,6 +599,74 @@ export default function SalesPage() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    {selectedOrder.status === "OPEN" && (
+                                        <form
+                                            className="border rounded p-2 mb-3 bg-light"
+                                            onSubmit={handleAddItemToOrder}
+                                        >
+                                            <div className="row g-2 align-items-end">
+                                                <div className="col-6">
+                                                    <label className="form-label small mb-1">Chọn món</label>
+                                                    <select
+                                                        className="form-select form-select-sm"
+                                                        value={itemForm.productName}
+                                                        onChange={(e) =>
+                                                            setItemForm((prev) => ({
+                                                                ...prev,
+                                                                productName: e.target.value,
+                                                            }))
+                                                        }
+                                                    >
+                                                        <option value="">-- Chọn món --</option>
+                                                        {allProducts.map((p) => (
+                                                            <option key={p.productID} value={p.productName}>
+                                                                {p.productName}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="col-3">
+                                                    <label className="form-label small mb-1">Số lượng</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        className="form-control form-control-sm"
+                                                        value={itemForm.quantity}
+                                                        onChange={(e) =>
+                                                            setItemForm((prev) => ({
+                                                                ...prev,
+                                                                quantity: e.target.value,
+                                                            }))
+                                                        }
+                                                    />
+                                                </div>
+                                                <div className="col-3 d-grid">
+                                                    <button
+                                                        type="submit"
+                                                        className="btn btn-success btn-sm"
+                                                        disabled={itemUpdating}
+                                                    >
+                                                        + Thêm món
+                                                    </button>
+                                                </div>
+                                                <div className="col-12">
+                                                    <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        placeholder="Ghi chú (tuỳ chọn)"
+                                                        value={itemForm.notes}
+                                                        onChange={(e) =>
+                                                            setItemForm((prev) => ({
+                                                                ...prev,
+                                                                notes: e.target.value,
+                                                            }))
+                                                        }
+                                                    />
+                                                </div>
+                                            </div>
+                                        </form>
+                                    )}
 
                                     <div className="mt-auto pt-3 border-top">
                                         <div className="d-flex justify-content-between align-items-center mb-3">

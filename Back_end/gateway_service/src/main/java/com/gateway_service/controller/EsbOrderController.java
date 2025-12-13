@@ -78,4 +78,33 @@ public class EsbOrderController {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
         return ResponseEntity.ok(orderClient.getRevenue(startDate, endDate, token));
     }
+    @PostMapping("/{orderId}/items")
+    public ResponseEntity<OrderResponse> addItem(
+            @PathVariable String orderId,
+            @RequestHeader(name = "Authorization") String authorization,
+            @RequestBody OrderItemRequest request
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(orderClient.addItem(orderId, request, token));
+    }
+
+    @PostMapping("/{orderId}/items/decrease")
+    public ResponseEntity<OrderResponse> decreaseItem(
+            @PathVariable String orderId,
+            @RequestHeader(name = "Authorization") String authorization,
+            @RequestBody OrderItemRequest request
+    ) {
+        String token = authorization.replace("Bearer ", "");
+        return ResponseEntity.ok(orderClient.decreaseItem(orderId, request, token));
+    }
+
+    @RequestMapping(value = "/{orderId}/items", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> handleItemsPreflight() {
+        return ResponseEntity.ok().build();
+    }
+
+    @RequestMapping(value = "/{orderId}/items/decrease", method = RequestMethod.OPTIONS)
+    public ResponseEntity<Void> handleItemsDecreasePreflight() {
+        return ResponseEntity.ok().build();
+    }
 }

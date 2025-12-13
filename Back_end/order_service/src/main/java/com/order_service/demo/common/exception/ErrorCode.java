@@ -9,7 +9,9 @@ public enum ErrorCode {
     PAYMENT_METHOD_NOT_FOUND(1011, "payment method not found"),
     ORDER_ITEMS_EMPTY(1012, "order must contain at least one product"),
     ORDER_NOT_FOUND(1013, "order not found"),
-    ORDER_STATUS_INVALID(1014, "order status is invalid");
+    ORDER_STATUS_INVALID(1014, "order status is invalid"),
+    ORDER_ALREADY_CLOSED(1015, "order has been closed"),
+    ORDER_ITEM_NOT_FOUND(1016, "order item not found");
 
     private int code;
     private String messenger;

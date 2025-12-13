@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.order_service.demo.dto.request.OrderItemRequest;
+
 @RestController
 @RequestMapping("/orders")
 @RequiredArgsConstructor
@@ -80,6 +82,23 @@ public class OrderController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ApiResponse.<BigDecimal>builder()
                 .result(orderService.getRevenueBetween(startDate, endDate,"CLOSE"))
+                .build();
+    }
+    @PostMapping("/{orderId}/items")
+    public ApiResponse<OrderResponse> addItem(@PathVariable String orderId,
+                                              @Valid @RequestBody OrderItemRequest request) {
+        OrderResponse response = orderService.addItem(orderId, request);
+        return ApiResponse.<OrderResponse>builder()
+                .result(response)
+                .build();
+    }
+
+    @PostMapping("/{orderId}/items/decrease")
+    public ApiResponse<OrderResponse> decreaseItem(@PathVariable String orderId,
+                                                   @Valid @RequestBody OrderItemRequest request) {
+        OrderResponse response = orderService.decreaseItemQuantity(orderId, request);
+        return ApiResponse.<OrderResponse>builder()
+                .result(response)
                 .build();
     }
 }

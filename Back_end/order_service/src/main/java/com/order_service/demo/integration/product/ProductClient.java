@@ -92,6 +92,32 @@ public class ProductClient {
             throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
         }
     }
+    public void increaseInventory(String productId, int quantity) {
+        String url = UriComponentsBuilder.fromHttpUrl(productServiceUrl)
+                .path("/products/{id}/inventory/increase")
+                .buildAndExpand(productId)
+                .toUriString();
 
-    // Các hàm khác giữ nguyên hoặc sửa tương tự...
+        try {
+            HttpEntity<InventoryUpdateRequest> request = new HttpEntity<>(new InventoryUpdateRequest(quantity));
+            restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    new ParameterizedTypeReference<ApiResponse<ProductSummary>>() {}
+            );
+        } catch (HttpClientErrorException ex) {
+            String responseBody = ex.getResponseBodyAsString();
+            log.error("Failed to increase inventory: {}", responseBody);
+
+            if (responseBody.contains("1007")) { // PRODUCT_NOT_FOUND
+                throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+            }
+            throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
+        } catch (RestClientException ex) {
+            log.error("Service unavailable when updating inventory for {}", productId, ex);
+            throw new AppException(ErrorCode.PRODUCT_SERVICE_UNAVAILABLE);
+        }
+    }
+
 }

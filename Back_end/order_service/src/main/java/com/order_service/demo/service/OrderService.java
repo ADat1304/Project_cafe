@@ -155,4 +155,76 @@ public class OrderService {
         LocalDateTime end = endDate.plusDays(1).atStartOfDay();
         return orderRepository.sumTotalAmountByOrderDateBetweenAndStatus(start, end,status);
     }
+    @Transactional
+    public OrderResponse addItem(String orderId, OrderItemRequest request) {
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if ("CLOSE".equalsIgnoreCase(order.getStatus())) {
+            throw new AppException(ErrorCode.ORDER_ALREADY_CLOSED);
+        }
+
+        ProductSummary product = productClient.fetchProductByName(request.getProductName());
+        productClient.decreaseInventory(product.getProductID(), request.getQuantity());
+
+        OrderDetail existingDetail = order.getOrderDetails().stream()
+                .filter(d -> d.getProductId().equals(product.getProductID()))
+                .findFirst()
+                .orElse(null);
+
+        if (existingDetail != null) {
+            existingDetail.setQuantity(existingDetail.getQuantity() + request.getQuantity());
+        } else {
+            OrderDetail detail = OrderDetail.builder()
+                    .order(order)
+                    .productId(product.getProductID())
+                    .productName(product.getProductName())
+                    .quantity(request.getQuantity())
+                    .unitPrice(product.getPrice())
+                    .notes(request.getNotes())
+                    .build();
+            order.getOrderDetails().add(detail);
+        }
+
+        order.setTotalAmount(recalculateTotal(order));
+
+        Orders savedOrder = orderRepository.save(order);
+        return orderMapper.toOrderResponse(savedOrder);
+    }
+
+    @Transactional
+    public OrderResponse decreaseItemQuantity(String orderId, OrderItemRequest request) {
+        Orders order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        if ("CLOSE".equalsIgnoreCase(order.getStatus())) {
+            throw new AppException(ErrorCode.ORDER_ALREADY_CLOSED);
+        }
+
+        ProductSummary product = productClient.fetchProductByName(request.getProductName());
+
+        OrderDetail targetDetail = order.getOrderDetails().stream()
+                .filter(d -> d.getProductId().equals(product.getProductID()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_ITEM_NOT_FOUND));
+
+        int removeQuantity = Math.min(request.getQuantity(), targetDetail.getQuantity());
+        productClient.increaseInventory(product.getProductID(), removeQuantity);
+
+        targetDetail.setQuantity(targetDetail.getQuantity() - removeQuantity);
+        if (targetDetail.getQuantity() <= 0) {
+            order.getOrderDetails().remove(targetDetail);
+        }
+
+        order.setTotalAmount(recalculateTotal(order));
+
+        Orders savedOrder = orderRepository.save(order);
+        return orderMapper.toOrderResponse(savedOrder);
+    }
+
+    private BigDecimal recalculateTotal(Orders order) {
+        return order.getOrderDetails().stream()
+                .map(detail -> detail.getUnitPrice().multiply(BigDecimal.valueOf(detail.getQuantity())))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }

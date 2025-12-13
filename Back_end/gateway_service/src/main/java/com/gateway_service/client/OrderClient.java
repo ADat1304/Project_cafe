@@ -57,6 +57,40 @@ public class OrderClient {
         );
         return response.getBody() != null ? response.getBody().getResult() : List.of();
     }
+
+    public OrderResponse addItem(String orderId, OrderItemRequest request, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (token != null && !token.isBlank()) {
+            headers.setBearerAuth(token);
+        }
+        HttpEntity<OrderItemRequest> entity = new HttpEntity<>(request, headers);
+        ResponseEntity<ApiResponse<OrderResponse>> response = restTemplate.exchange(
+                endpointsProperties.getOrder() + "/orders/" + orderId + "/items",
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        return response.getBody() != null ? response.getBody().getResult() : null;
+    }
+
+    public OrderResponse decreaseItem(String orderId, OrderItemRequest request, String token) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (token != null && !token.isBlank()) {
+            headers.setBearerAuth(token);
+        }
+        HttpEntity<OrderItemRequest> entity = new HttpEntity<>(request, headers);
+        ResponseEntity<ApiResponse<OrderResponse>> response = restTemplate.exchange(
+                endpointsProperties.getOrder() + "/orders/" + orderId + "/items/decrease",
+                HttpMethod.POST,
+                entity,
+                new ParameterizedTypeReference<>() {
+                }
+        );
+        return response.getBody() != null ? response.getBody().getResult() : null;
+    }
     public OrderResponse updateStatus(String orderId, OrderStatusUpdateRequest request, String token) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
