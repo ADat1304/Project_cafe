@@ -35,6 +35,11 @@ const createEmptyOrderForm = () => ({
     items: [{ productName: "", quantity: 1, notes: "" }],
 });
 
+const displayPaymentMethod = (type) => {
+  if (!type) return "";
+  return type.toLowerCase() === "pay card" ? "Bank" : type;
+};
+
 export default function SalesPage() {
     const token = useMemo(() => getAuth()?.token, []);
 
@@ -674,7 +679,8 @@ const handleAddItemToOrder = async (e) => {
                                                 <div className="text-muted">Tổng cộng:</div>
                                                 <div className="small text-secondary">
                                                     Thanh toán:{" "}
-                                                    {selectedOrder.paymentMethodType || "-"}
+                                                    {displayPaymentMethod(selectedOrder.paymentMethodType) || "-"}
+
                                                 </div>
                                             </div>
                                             <span className="fs-4 fw-bold text-success">
@@ -729,7 +735,7 @@ const handleAddItemToOrder = async (e) => {
                         <div className="card-header bg-success text-white py-2">
                             <div className="d-flex justify-content-between align-items-center">
                 <span className="fw-semibold small">
-                  Thanh toán Pay Card
+                  Thanh toán Bank
                 </span>
                                 <button
                                     type="button"
@@ -866,13 +872,14 @@ const handleAddItemToOrder = async (e) => {
                                                         -- Chọn phương thức --
                                                     </option>
                                                     {paymentMethods.map((pm) => (
-                                                        <option
-                                                            key={pm.paymentMethodID}
-                                                            value={pm.paymentMethodType}
-                                                        >
-                                                            {pm.paymentMethodType}
-                                                        </option>
+                                                      <option
+                                                        key={pm.paymentMethodID}
+                                                        value={pm.paymentMethodType} // GIỮ NGUYÊN "Pay card"
+                                                      >
+                                                        {displayPaymentMethod(pm.paymentMethodType)} {/* HIỂN THỊ "Bank" */}
+                                                      </option>
                                                     ))}
+
                                                 </select>
                                             </div>
                                         </div>
