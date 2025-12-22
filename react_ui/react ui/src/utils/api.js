@@ -171,13 +171,25 @@ export const updateProduct = (productId, data, token) =>
 export const deleteProduct = (productId, token) =>
     requestGateway(`${ESB_PREFIX}/products/${productId}`, { method: "DELETE", token });
 
- export const fetchPaymentMethods = (token) =>
-     requestGateway(`${ESB_PREFIX}/orders/payment-methods`, { token });
- export const fetchTopSellingProducts = (limit, token) => {
-         return requestGateway(`${ESB_PREFIX}/orders/top-selling?limit=${limit}`, { token });
+
+     export const fetchPaymentMethods = (token) =>
+         requestGateway(`${ESB_PREFIX}/orders/payment-methods`, { token });
+
+     export const fetchTopSellingProducts = (limit, token) =>
+         requestGateway(`${ESB_PREFIX}/orders/top-selling?limit=${limit}`, { token });
+
+     export const fetchRevenue = (startDate, endDate, token) => {
+         const params = new URLSearchParams({
+             startDate,
+             endDate,
+         }).toString();
+
+         return requestGateway(`${ESB_PREFIX}/orders/revenue?${params}`, { token });
      };
- export const importHighlandsProducts = (token) =>
-     requestGateway(`${ESB_PREFIX}/products/import/highlands`, { method: "POST", token });
+
+     export const importHighlandsProducts = (token) =>
+         requestGateway(`${ESB_PREFIX}/products/import/highlands`, { method: "POST", token });
+
 export const addOrderItem = (orderId, data, token) =>
     requestGateway(`${ESB_PREFIX}/orders/${orderId}/items`, {
         method: "POST",

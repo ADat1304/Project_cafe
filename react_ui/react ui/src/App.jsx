@@ -9,7 +9,7 @@ import LoginPage from "./pages/LoginPage.jsx";
 import ProductsPage from "./pages/ProductsPage.jsx";
 import SalesPage from "./pages/SalesPage.jsx";
 import EmployeesPage from "./pages/EmployeesPage.jsx";
-
+import RevenueReportPage from "./pages/RevenueReport.jsx";
 export default function App() {
     return (
         <Routes>
@@ -22,6 +22,7 @@ export default function App() {
                     <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/sales" element={<SalesPage />} />
+                    <Route path="/statistics" element={<RevenueReportPage />} />
                     <Route path="/products" element={<ProductsPage />} />
                     <Route path="/employees" element={<EmployeesPage />} />
                     {/* sau này thêm: statistics, invoices, employees... */}

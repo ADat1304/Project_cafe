@@ -41,9 +41,10 @@ export default function Sidebar() {
                 <NavLink to="/sales" className={menuItemClass}>
                     <span className="me-2 bi bi-cash-stack" /> Bán hàng
                 </NavLink>
-                {/*<NavLink to="/statistics" className={menuItemClass}>*/}
-                {/*    <span className="me-2 bi bi-graph-up" /> Thống kê*/}
-                {/*</NavLink>*/}
+
+                 <NavLink to="/statistics" className={menuItemClass}>
+                                    <span className="me-2 bi bi-graph-up" /> Báo cáo doanh thu
+                 </NavLink>
                 <NavLink to="/products" className={menuItemClass}>
                     <span className="me-2 bi bi-cup-hot" /> Sản phẩm / Menu
                 </NavLink>
