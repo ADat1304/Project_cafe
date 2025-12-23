@@ -32,12 +32,12 @@ const formatDateTime = (value) => {
 const createEmptyOrderForm = () => ({
     tableNumber: "",
     paymentMethodType: "",
-    items: [{ productName: "", quantity: 1, notes: "" }],
+    items: [],
 });
 
 const displayPaymentMethod = (type) => {
-  if (!type) return "";
-  return type.toLowerCase() === "pay card" ? "Bank" : type;
+    if (!type) return "";
+    return type.toLowerCase() === "pay card" ? "Bank" : type;
 };
 
 export default function SalesPage() {
@@ -48,7 +48,7 @@ export default function SalesPage() {
     const [allOrders, setAllOrders] = useState([]);
     const [selectedDate, setSelectedDate] = useState("");
 
-    const [allProducts, setAllProducts] = useState([]); // Dữ liệu gốc chứa giá chuẩn
+    const [allProducts, setAllProducts] = useState([]);
     const [products, setProducts] = useState([]);
 
     const [tables, setTables] = useState([]);
@@ -56,6 +56,9 @@ export default function SalesPage() {
 
     const [categories, setCategories] = useState(["all"]);
     const [selectedCategory, setSelectedCategory] = useState("all");
+
+    // State riêng cho filter category trong Modal
+    const [modalCategory, setModalCategory] = useState("all");
 
     const [loadingOrders, setLoadingOrders] = useState(false);
     const [loadingProducts, setLoadingProducts] = useState(false);
@@ -192,9 +195,6 @@ export default function SalesPage() {
         orders.find((o) => o.orderId === selectedOrderId) ||
         (orders.length ? orders[0] : null);
 
-    const isPayCardMethod =
-        (orderForm.paymentMethodType || "").toLowerCase() === "pay card";
-
     const availableTables = useMemo(
         () => tables.filter((t) => Number(t.status) !== 1),
         [tables]
@@ -211,31 +211,89 @@ export default function SalesPage() {
         });
     }, [availableTables]);
 
-    const updateItem = (idx, field, value) => {
+    // --- LOGIC CHO MODAL ---
+    const handleAddToModalCart = (product) => {
         setOrderForm((prev) => {
-            const nextItems = [...prev.items];
-            nextItems[idx] = { ...nextItems[idx], [field]: value };
-            return { ...prev, items: nextItems };
+            const existingItemIndex = prev.items.findIndex(i => i.productName === product.productName);
+            if (existingItemIndex >= 0) {
+                const newItems = [...prev.items];
+                newItems[existingItemIndex] = {
+                    ...newItems[existingItemIndex],
+                    quantity: newItems[existingItemIndex].quantity + 1
+                };
+                return { ...prev, items: newItems };
+            } else {
+                return {
+                    ...prev,
+                    items: [...prev.items, { productName: product.productName, quantity: 1, notes: "" }]
+                };
+            }
         });
     };
 
-    const addItem = () =>
-        setOrderForm((prev) => ({
-            ...prev,
-            items: [...prev.items, { productName: "", quantity: 1, notes: "" }],
-        }));
+    const handleModalUpdateQuantity = (idx, delta) => {
+        setOrderForm((prev) => {
+            const newItems = [...prev.items];
+            const item = newItems[idx];
+            const newQty = item.quantity + delta;
+            if (newQty <= 0) {
+                return { ...prev, items: prev.items.filter((_, i) => i !== idx) };
+            }
+            newItems[idx] = { ...item, quantity: newQty };
+            return { ...prev, items: newItems };
+        });
+    };
 
-    const removeItem = (idx) =>
+    const handleModalRemoveItem = (idx) => {
         setOrderForm((prev) => ({
             ...prev,
             items: prev.items.filter((_, i) => i !== idx),
         }));
+    };
+
+    const handleModalUpdateNote = (idx, note) => {
+        setOrderForm((prev) => {
+            const newItems = [...prev.items];
+            newItems[idx] = { ...newItems[idx], notes: note };
+            return { ...prev, items: newItems };
+        });
+    };
+
+    const getModalTotalAmount = () => {
+        return orderForm.items.reduce((total, item) => {
+            const price = getProductPrice(item.productName);
+            return total + (price * item.quantity);
+        }, 0);
+    };
+
+    const modalProducts = useMemo(() => {
+        if (modalCategory === 'all') return allProducts;
+        return allProducts.filter(p => p.categoryName === modalCategory);
+    }, [allProducts, modalCategory]);
+
 
     const handleCreateOrder = async (e) => {
         e.preventDefault();
         setCreateOrderError("");
         setCreateOrderSuccess("");
         setCreatingOrder(true);
+
+        if (!orderForm.tableNumber) {
+            setCreateOrderError("Vui lòng chọn Bàn trước khi tạo đơn!");
+            setCreatingOrder(false);
+            return;
+        }
+        if (!orderForm.paymentMethodType) {
+            setCreateOrderError("Vui lòng chọn Phương thức thanh toán!");
+            setCreatingOrder(false);
+            return;
+        }
+        if (!orderForm.items || orderForm.items.length === 0) {
+            setCreateOrderError("Vui lòng chọn ít nhất 1 món!");
+            setCreatingOrder(false);
+            return;
+        }
+
         try {
             const payload = {
                 tableNumber: orderForm.tableNumber,
@@ -248,15 +306,19 @@ export default function SalesPage() {
                     }))
                     .filter((i) => i.productName && i.quantity > 0),
             };
-            if (!payload.items.length) throw new Error("Chưa chọn món nào");
 
             await createOrder(payload, token);
             setCreateOrderSuccess("Tạo đơn thành công!");
-            setOrderForm(createEmptyOrderForm());
-            setShowCreateModal(false);
-            setShowQrPanel(false);
+
             await loadOrders();
             await loadTables();
+
+            setTimeout(() => {
+                 setOrderForm(createEmptyOrderForm());
+                 setShowCreateModal(false);
+                 setCreateOrderSuccess("");
+            }, 1000);
+
         } catch (err) {
             setCreateOrderError(err.message || "Lỗi tạo đơn");
         } finally {
@@ -264,20 +326,33 @@ export default function SalesPage() {
         }
     };
 
-    const handleCloseOrder = async (order) => {
-        if (!window.confirm("Xác nhận thanh toán và đóng đơn?")) return;
+    const executeCloseOrder = async (order) => {
         setClosingOrderId(order.orderId);
         try {
             await updateOrderStatus(order.orderId, "CLOSE", token);
             if (order.tableNumber)
                 await updateTableStatus(order.tableNumber, 0, token);
             setActionMessage("Đã đóng đơn hàng thành công");
+            setShowQrPanel(false);
             await loadOrders();
             await loadTables();
         } catch (err) {
             setActionError(err.message);
         } finally {
             setClosingOrderId(null);
+        }
+    };
+
+    const handleCloseOrder = (order) => {
+        const type = order.paymentMethodType?.toLowerCase() || "";
+
+        // Kiểm tra thanh toán Bank
+        if (type === "bank" || type === "pay card") {
+            setShowQrPanel(true);
+        } else {
+            if (window.confirm("Xác nhận thanh toán và đóng đơn?")) {
+                executeCloseOrder(order);
+            }
         }
     };
 
@@ -297,7 +372,7 @@ export default function SalesPage() {
         }
     };
 
-const handleAddItemToOrder = async (e) => {
+    const handleAddItemToOrder = async (e) => {
         e?.preventDefault();
         if (!selectedOrderId) return;
 
@@ -348,6 +423,7 @@ const handleAddItemToOrder = async (e) => {
             setItemUpdating(false);
         }
     };
+
     return (
         <div>
             <PageHeader
@@ -367,6 +443,7 @@ const handleAddItemToOrder = async (e) => {
                             onClick={() => {
                                 setCreateOrderError("");
                                 setOrderForm(createEmptyOrderForm());
+                                setModalCategory("all");
                                 setShowCreateModal(true);
                                 setShowQrPanel(false);
                             }}
@@ -502,7 +579,7 @@ const handleAddItemToOrder = async (e) => {
                     </div>
                 </div>
 
-                {/* 3. CHI TIẾT HÓA ĐƠN - ĐÃ SỬA LỖI 5 x 0 */}
+                {/* 3. CHI TIẾT HÓA ĐƠN */}
                 <div className="col-md-4">
                     <div className="card shadow-sm border-0 h-100">
                         <div className="card-body d-flex flex-column">
@@ -537,9 +614,6 @@ const handleAddItemToOrder = async (e) => {
                                             </thead>
                                             <tbody>
                                             {selectedOrder.items?.map((item, idx) => {
-                                                // [LOGIC SỬA LỖI]: Tìm giá đúng
-                                                // Ưu tiên 1: Giá có sẵn trong đơn hàng (item.unitPrice)
-                                                // Ưu tiên 2: Nếu bằng 0, tìm giá gốc trong Menu (allProducts)
                                                 let displayPrice = item.unitPrice;
 
                                                 if (!displayPrice || displayPrice === 0) {
@@ -551,7 +625,6 @@ const handleAddItemToOrder = async (e) => {
                                                     }
                                                 }
 
-                                                // Tính lại thành tiền hiển thị nếu cần
                                                 const displayTotal =
                                                     (displayPrice || 0) * item.quantity;
 
@@ -574,22 +647,23 @@ const handleAddItemToOrder = async (e) => {
                                                             )}
                                                         </td>
                                                         <td className="text-center text-muted">
-                                      <div className="d-flex justify-content-center align-items-center gap-2 flex-wrap">
-                                                                                                      {selectedOrder.status === "OPEN" && (
-                                                                                                          <button
-                                                                                                              className="btn btn-outline-danger btn-sm"
-                                                                                                              type="button"
-                                                                                                              disabled={itemUpdating}
-                                                                                                              onClick={() => handleDecreaseItem(item.productName)}
-                                                                                                          >
-                                                                                                              <i className="bi bi-dash"></i>
-                                                                                                          </button>
-                                                                                                      )}
-                                                                                                      <span>
-                                                                                                          {item.quantity} x{" "}
-                                                                                                          {formatCurrency(displayPrice || 0)}
-                                                                                                      </span>
-                                                                                                  </div>
+                                                            <div className="d-flex justify-content-center align-items-center gap-2">
+                                                                {selectedOrder.status === "OPEN" && (
+                                                                    <button
+                                                                        className="btn btn-outline-danger btn-sm p-0 d-flex align-items-center justify-content-center"
+                                                                        style={{ width: "24px", height: "24px" }}
+                                                                        type="button"
+                                                                        disabled={itemUpdating}
+                                                                        onClick={() => handleDecreaseItem(item.productName)}
+                                                                        title="Giảm số lượng"
+                                                                    >
+                                                                        <i className="bi bi-dash"></i>
+                                                                    </button>
+                                                                )}
+                                                                <span className="text-nowrap">
+                                                                    {item.quantity} x {formatCurrency(displayPrice || 0)}
+                                                                </span>
+                                                            </div>
                                                         </td>
                                                         <td className="text-end fw-bold text-dark">
                                                             {formatCurrency(
@@ -652,7 +726,7 @@ const handleAddItemToOrder = async (e) => {
                                                         className="btn btn-success btn-sm"
                                                         disabled={itemUpdating}
                                                     >
-                                                        + Thêm món
+                                                        + Thêm
                                                     </button>
                                                 </div>
                                                 <div className="col-12">
@@ -680,7 +754,6 @@ const handleAddItemToOrder = async (e) => {
                                                 <div className="small text-secondary">
                                                     Thanh toán:{" "}
                                                     {displayPaymentMethod(selectedOrder.paymentMethodType) || "-"}
-
                                                 </div>
                                             </div>
                                             <span className="fs-4 fw-bold text-success">
@@ -725,54 +798,53 @@ const handleAddItemToOrder = async (e) => {
                 </div>
             </div>
 
-            {/* PANEL QR PAY CARD BÊN PHẢI */}
+            {/* [MODIFIED] PANEL QR PAY CARD - Modal giữa màn hình, nền tối */}
             {showQrPanel && (
                 <div
-                    className="position-fixed top-50 end-0 translate-middle-y me-3"
-                    style={{ zIndex: 1060 }}
+                    className="modal fade show d-block"
+                    style={{ background: "rgba(0,0,0,0.5)", zIndex: 1060 }}
                 >
-                    <div className="card shadow-lg border-0" style={{ width: 280 }}>
-                        <div className="card-header bg-success text-white py-2">
-                            <div className="d-flex justify-content-between align-items-center">
-                <span className="fw-semibold small">
-                  Thanh toán Bank
-                </span>
+                    <div className="modal-dialog modal-dialog-centered modal-sm">
+                        <div className="modal-content border-0 shadow-lg">
+                            <div className="modal-header bg-success text-white py-2">
+                                <h5 className="modal-title fs-6 fw-bold">Thanh toán Bank</h5>
                                 <button
                                     type="button"
-                                    className="btn-close btn-close-white btn-sm"
+                                    className="btn-close btn-close-white"
                                     onClick={() => setShowQrPanel(false)}
                                 ></button>
                             </div>
-                        </div>
-                        <div className="card-body text-center">
-                            <div className="small text-muted mb-2">
-                                Quét mã để chuyển khoản
+                            <div className="modal-body text-center p-4">
+                                <div className="small text-muted mb-3">
+                                    Quét mã để chuyển khoản
+                                </div>
+                                <img
+                                    src={payCardQr}
+                                    alt="QR Pay Card"
+                                    className="img-fluid rounded mb-3 border p-1"
+                                    style={{maxHeight: "200px"}}
+                                />
+                                <div className="small text-muted mb-4 fst-italic">
+                                    Vui lòng bấm xác nhận sau khi chuyển khoản thành công.
+                                </div>
+                                <div className="d-grid gap-2">
+                                    <button
+                                        type="button"
+                                        className="btn btn-success fw-bold"
+                                        onClick={() => executeCloseOrder(selectedOrder)}
+                                        disabled={!!closingOrderId}
+                                    >
+                                        {closingOrderId ? "Đang xử lý..." : "Chuyển khoản thành công"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-outline-secondary"
+                                        onClick={() => setShowQrPanel(false)}
+                                    >
+                                        Đóng
+                                    </button>
+                                </div>
                             </div>
-                            <img
-                                src={payCardQr}
-                                alt="QR Pay Card"
-                                className="img-fluid rounded mb-2"
-                            />
-                            <div className="small text-muted mb-3">
-                                Vui lòng xác nhận sau khi đã chuyển khoản thành công.
-                            </div>
-                            <button
-                                type="button"
-                                className="btn btn-success w-100 mb-2"
-                                onClick={() => {
-                                    // Sau này muốn xử lý thêm (vd đánh dấu đã chuyển khoản) thì thêm logic ở đây
-                                    setShowQrPanel(false);
-                                }}
-                            >
-                                Chuyển khoản thành công
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-outline-secondary btn-sm w-100"
-                                onClick={() => setShowQrPanel(false)}
-                            >
-                                Đóng
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -784,10 +856,10 @@ const handleAddItemToOrder = async (e) => {
                     className="modal fade show d-block"
                     style={{ background: "rgba(0,0,0,0.5)" }}
                 >
-                    <div className="modal-dialog modal-lg modal-dialog-centered">
-                        <div className="modal-content border-0 shadow">
-                            <div className="modal-header bg-success text-white">
-                                <h5 className="modal-title">Thêm đơn hàng mới</h5>
+                    <div className="modal-dialog modal-xl modal-dialog-centered">
+                        <div className="modal-content border-0 shadow d-flex flex-column" style={{height: '90vh'}}>
+                            <div className="modal-header bg-success text-white py-2 flex-shrink-0">
+                                <h5 className="modal-title fs-6 fw-bold">Tạo Đơn Mới</h5>
                                 <button
                                     className="btn-close btn-close-white"
                                     onClick={() => {
@@ -796,204 +868,195 @@ const handleAddItemToOrder = async (e) => {
                                     }}
                                 ></button>
                             </div>
-                            <div className="modal-body">
-                                {createOrderError && (
-                                    <div className="alert alert-danger py-2">
-                                        {createOrderError}
-                                    </div>
-                                )}
-                                {createOrderSuccess && (
-                                    <div className="alert alert-success py-2">
-                                        {createOrderSuccess}
-                                    </div>
-                                )}
 
-                                <form onSubmit={handleCreateOrder}>
-                                    {/* HÀNG: BÀN + THANH TOÁN */}
-                                    <div className="row g-3 mb-3">
-                                        {/* BÀN SỐ */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-muted">
-                                                Bàn số
-                                            </label>
+                            {(createOrderSuccess || createOrderError) && (
+                                <div className={`alert ${createOrderSuccess ? 'alert-success' : 'alert-danger'} m-0 rounded-0 py-2 px-3 small flex-shrink-0`}>
+                                    {createOrderSuccess || createOrderError}
+                                </div>
+                            )}
+
+                            <div className="modal-body p-0 flex-grow-1 overflow-hidden bg-light">
+                                <div className="row g-0 h-100">
+                                    {/* CỘT 1: CẤU HÌNH (Bàn, Thanh toán) */}
+                                    <div className="col-md-3 bg-white border-end d-flex flex-column p-3 h-100 overflow-auto">
+                                        <div className="mb-4">
+                                            <label className="form-label fw-bold text-dark">Bàn ({availableTables.length} trống)</label>
                                             <select
-                                                className="form-select"
+                                                className="form-select mb-2"
                                                 value={orderForm.tableNumber}
-                                                required
-                                                onChange={(e) =>
-                                                    setOrderForm({
-                                                        ...orderForm,
-                                                        tableNumber: e.target.value,
-                                                    })
-                                                }
+                                                onChange={(e) => setOrderForm({ ...orderForm, tableNumber: e.target.value })}
                                             >
                                                 <option value="">-- Chọn bàn --</option>
-                                                {availableTables.length === 0 ? (
-                                                    <option value="" disabled>
-                                                        Không có bàn trống
+                                                {availableTables.map((t) => (
+                                                    <option key={t.tableID} value={t.tableNumber ?? t.tableID}>
+                                                        {t.tableNumber ? `Bàn ${t.tableNumber}` : t.tableName || t.tableID}
                                                     </option>
-                                                ) : (
-                                                    availableTables.map((t) => (
-                                                        <option
-                                                            key={t.tableID}
-                                                            value={t.tableNumber ?? t.tableID}
-                                                        >
-                                                            {t.tableNumber
-                                                                ? `Bàn ${t.tableNumber}`
-                                                                : t.tableName || t.tableID}
-                                                        </option>
-                                                    ))
-                                                )}
+                                                ))}
                                             </select>
+                                            <div className="d-flex flex-wrap gap-2 mt-2">
+                                                {availableTables.map(t => (
+                                                    <button
+                                                        key={t.tableID}
+                                                        type="button"
+                                                        className={`btn btn-sm ${String(orderForm.tableNumber) === String(t.tableNumber ?? t.tableID) ? 'btn-success' : 'btn-outline-secondary'}`}
+                                                        style={{width: '40px'}}
+                                                        onClick={() => setOrderForm({ ...orderForm, tableNumber: t.tableNumber ?? t.tableID })}
+                                                    >
+                                                        {t.tableNumber || "?"}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
 
-                                        {/* THANH TOÁN */}
-                                        <div className="col-md-6">
-                                            <label className="form-label small fw-bold text-muted">
-                                                Thanh toán
-                                            </label>
-                                            <div className="d-flex align-items-center gap-3 flex-wrap">
-                                                <select
-                                                    className="form-select flex-fill"
-                                                    value={orderForm.paymentMethodType}
-                                                    required
-                                                    onChange={(e) => {
-                                                        const value = e.target.value;
-                                                        setOrderForm({
-                                                            ...orderForm,
-                                                            paymentMethodType: value,
-                                                        });
-                                                        setShowQrPanel(
-                                                            value.toLowerCase() === "pay card"
-                                                        );
-                                                    }}
-                                                >
-                                                    <option value="">
-                                                        -- Chọn phương thức --
+                                        <div className="mb-4">
+                                            <label className="form-label fw-bold text-dark">Thanh toán</label>
+                                            <select
+                                                className="form-select"
+                                                value={orderForm.paymentMethodType}
+                                                onChange={(e) => {
+                                                    const value = e.target.value;
+                                                    setOrderForm({ ...orderForm, paymentMethodType: value });
+                                                }}
+                                            >
+                                                <option value="">-- Chọn phương thức --</option>
+                                                {paymentMethods.map((pm) => (
+                                                    <option key={pm.paymentMethodID} value={pm.paymentMethodType}>
+                                                        {displayPaymentMethod(pm.paymentMethodType)}
                                                     </option>
-                                                    {paymentMethods.map((pm) => (
-                                                      <option
-                                                        key={pm.paymentMethodID}
-                                                        value={pm.paymentMethodType} // GIỮ NGUYÊN "Pay card"
-                                                      >
-                                                        {displayPaymentMethod(pm.paymentMethodType)} {/* HIỂN THỊ "Bank" */}
-                                                      </option>
-                                                    ))}
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
 
-                                                </select>
+                                    {/* CỘT 2: THỰC ĐƠN (Grid Sản phẩm) */}
+                                    <div className="col-md-5 bg-white border-end d-flex flex-column h-100">
+                                        <div className="p-3 border-bottom flex-shrink-0">
+                                            <label className="fw-bold mb-2 d-block">Thực đơn</label>
+                                            <div className="d-flex gap-2 overflow-auto pb-1" style={{scrollbarWidth: 'thin'}}>
+                                                 {categories.map((cat) => (
+                                                    <button
+                                                        key={cat}
+                                                        onClick={() => setModalCategory(cat)}
+                                                        className={`btn btn-sm text-nowrap ${
+                                                            modalCategory === cat ? "btn-dark" : "btn-outline-dark"
+                                                        }`}
+                                                    >
+                                                        {cat === "all" ? "Tất cả" : cat}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="flex-grow-1 overflow-auto p-3 bg-light">
+                                            <div className="row g-2">
+                                                {modalProducts.map((p) => (
+                                                    <div className="col-6 col-lg-4" key={p.productID}>
+                                                        <div
+                                                            className="card h-100 border-0 shadow-sm product-card"
+                                                            onClick={() => handleAddToModalCart(p)}
+                                                            style={{cursor: 'pointer', transition: 'transform 0.1s'}}
+                                                        >
+                                                            <div className="card-body p-2 d-flex flex-column">
+                                                                <div className="d-flex align-items-center mb-2">
+                                                                     <div className="rounded bg-light d-flex align-items-center justify-content-center flex-shrink-0" style={{width: 40, height: 40}}>
+                                                                         {p.images?.[0] ?
+                                                                             <img src={p.images[0]} className="w-100 h-100 object-fit-cover rounded" alt=""/> :
+                                                                             <i className="bi bi-cup text-muted"></i>
+                                                                         }
+                                                                     </div>
+                                                                     <div className="ms-2 small fw-bold text-truncate w-100" title={p.productName}>
+                                                                         {p.productName}
+                                                                     </div>
+                                                                </div>
+                                                                <div className="mt-auto fw-bold text-success small">
+                                                                    {formatCurrency(p.price)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* CHI TIẾT MÓN */}
-                                    <div className="bg-light p-3 rounded mb-3">
-                                        <label className="form-label small fw-bold text-muted mb-2">
-                                            Chi tiết món
-                                        </label>
-                                        {orderForm.items.map((item, idx) => {
-                                            const itemUnitPrice = getProductPrice(
-                                                item.productName
-                                            );
-                                            const itemTotal =
-                                                (itemUnitPrice || 0) * item.quantity;
-                                            return (
-                                                <div
-                                                    key={idx}
-                                                    className="row g-2 align-items-center mb-2"
-                                                >
-                                                    <div className="col-5">
-                                                        <select
-                                                            className="form-select form-select-sm"
-                                                            value={item.productName}
-                                                            required
-                                                            onChange={(e) =>
-                                                                updateItem(
-                                                                    idx,
-                                                                    "productName",
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                        >
-                                                            <option value="">Chọn món...</option>
-                                                            {allProducts.map((p) => (
-                                                                <option
-                                                                    key={p.productID}
-                                                                    value={p.productName}
-                                                                >
-                                                                    {p.productName}
-                                                                </option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                    <div className="col-2">
-                                                        <input
-                                                            type="number"
-                                                            className="form-control form-control-sm text-center"
-                                                            min="1"
-                                                            value={item.quantity}
-                                                            onChange={(e) =>
-                                                                updateItem(
-                                                                    idx,
-                                                                    "quantity",
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                        />
-                                                    </div>
-                                                    <div className="col-2 text-end small fw-bold text-primary">
-                                                        {item.productName
-                                                            ? formatCurrency(itemTotal)
-                                                            : "-"}
-                                                    </div>
-                                                    <div className="col-2">
-                                                        <input
-                                                            type="text"
-                                                            className="form-control form-control-sm"
-                                                            placeholder="Ghi chú"
-                                                            value={item.notes}
-                                                            onChange={(e) =>
-                                                                updateItem(
-                                                                    idx,
-                                                                    "notes",
-                                                                    e.target.value
-                                                                )
-                                                            }
-                                                        />
-                                                    </div>
-                                                    <div className="col-1 text-end">
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-outline-danger btn-sm border-0"
-                                                            onClick={() => removeItem(idx)}
-                                                            disabled={orderForm.items.length === 1}
-                                                        >
-                                                            <i className="bi bi-trash"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                        <button
-                                            type="button"
-                                            className="btn text-success btn-link btn-sm text-decoration-none px-0"
-                                            onClick={addItem}
-                                        >
-                                            + Thêm món khác
-                                        </button>
-                                    </div>
+                                    {/* CỘT 3: ĐÃ CHỌN (Giỏ hàng) */}
+                                    <div className="col-md-4 bg-white d-flex flex-column h-100">
+                                        <div className="p-3 border-bottom d-flex justify-content-between align-items-center flex-shrink-0">
+                                            <label className="fw-bold mb-0">Đã chọn</label>
+                                            <span className="badge bg-secondary">{orderForm.items.length} món</span>
+                                        </div>
 
-                                    <div className="d-grid">
-                                        <button
-                                            type="submit"
-                                            className="btn btn-success"
-                                            disabled={creatingOrder}
-                                        >
-                                            {creatingOrder
-                                                ? "Đang xử lý..."
-                                                : "Lưu & Tạo Hóa Đơn"}
-                                        </button>
+                                        <div className="flex-grow-1 overflow-auto p-3">
+                                            {orderForm.items.length === 0 ? (
+                                                <div className="text-center text-muted mt-5">
+                                                    <i className="bi bi-basket3 fs-1 d-block mb-2 opacity-50"></i>
+                                                    Chưa có món nào được chọn
+                                                </div>
+                                            ) : (
+                                                <div className="d-flex flex-column gap-3">
+                                                    {orderForm.items.map((item, idx) => {
+                                                        const price = getProductPrice(item.productName);
+                                                        const total = price * item.quantity;
+                                                        return (
+                                                            <div key={idx} className="border-bottom pb-2">
+                                                                <div className="d-flex justify-content-between align-items-start mb-1">
+                                                                    <span className="fw-semibold text-primary">{item.productName}</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="btn-close small"
+                                                                        aria-label="Remove"
+                                                                        onClick={() => handleModalRemoveItem(idx)}
+                                                                    ></button>
+                                                                </div>
+                                                                <div className="d-flex justify-content-between align-items-center">
+                                                                    <div className="input-group input-group-sm" style={{width: '100px'}}>
+                                                                        <button
+                                                                            className="btn btn-outline-secondary"
+                                                                            type="button"
+                                                                            onClick={() => handleModalUpdateQuantity(idx, -1)}
+                                                                        >-</button>
+                                                                        <input
+                                                                            type="text"
+                                                                            className="form-control text-center bg-white px-0"
+                                                                            value={item.quantity}
+                                                                            readOnly
+                                                                        />
+                                                                        <button
+                                                                            className="btn btn-outline-secondary"
+                                                                            type="button"
+                                                                            onClick={() => handleModalUpdateQuantity(idx, 1)}
+                                                                        >+</button>
+                                                                    </div>
+                                                                    <span className="fw-bold">{formatCurrency(total)}</span>
+                                                                </div>
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-control form-control-sm mt-2 bg-light border-0"
+                                                                    placeholder="Ghi chú..."
+                                                                    value={item.notes}
+                                                                    onChange={(e) => handleModalUpdateNote(idx, e.target.value)}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="p-3 border-top bg-white mt-auto flex-shrink-0">
+                                            <div className="d-flex justify-content-between align-items-center mb-3">
+                                                <span className="text-muted">Tổng tiền:</span>
+                                                <span className="fs-4 fw-bold text-success">{formatCurrency(getModalTotalAmount())}</span>
+                                            </div>
+                                            <button
+                                                className="btn btn-success w-100 py-2 fw-bold text-uppercase"
+                                                onClick={handleCreateOrder}
+                                                disabled={creatingOrder || orderForm.items.length === 0}
+                                            >
+                                                {creatingOrder ? "Đang xử lý..." : "Hoàn tất & In hóa đơn"}
+                                            </button>
+                                        </div>
                                     </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
                     </div>
