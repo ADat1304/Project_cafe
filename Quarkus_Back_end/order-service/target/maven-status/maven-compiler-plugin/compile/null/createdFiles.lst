@@ -1,9 +1,0 @@
-com\example\order_service\dto\request\OrderItemRequest.class
-com\example\order_service\client\ProductClient.class
-com\example\order_service\dto\request\OrderRequest.class
-com\example\order_service\dto\request\OrderItemRequest$OrderItemRequestBuilder.class
-com\example\order_service\dto\response\ProductResponse.class
-com\example\order_service\common\ApiResponse.class
-com\example\order_service\common\ApiResponse$ApiResponseBuilder.class
-com\example\order_service\dto\response\ProductResponse$ProductResponseBuilder.class
-com\example\order_service\dto\request\OrderRequest$OrderRequestBuilder.class
