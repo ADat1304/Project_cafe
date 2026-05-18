@@ -1,9 +1,9 @@
 package com.order_service.demo;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@QuarkusTest
 class OrderServiceApplicationTests {
 
 	@Test

@@ -1,9 +1,9 @@
 package com.gateway_service;
 
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@QuarkusTest
 class ApplicationTests {
 
 	@Test

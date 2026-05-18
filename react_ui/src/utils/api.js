@@ -1,6 +1,6 @@
 import { clearAuth, getAuth } from "./auth.js";
 
-const GATEWAY_BASE_URL = (import.meta.env.VITE_GATEWAY_URL || "http://localhost:8080").replace(/\/$/, "");
+const GATEWAY_BASE_URL = (import.meta.env.VITE_GATEWAY_URL || "http://localhost:57396").replace(/\/$/, "");
 const ESB_PREFIX = "/esb";
 
 const buildUrl = (path) => {

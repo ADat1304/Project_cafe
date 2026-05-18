@@ -30,15 +30,19 @@ import java.util.StringJoiner;
 
 @Slf4j
 @ApplicationScoped
-@RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthenticationService {
-    UserRepository userRepository;
-    PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Inject
     @ConfigProperty(name = "security.jwt.secret")
     String SIGNER_KEY;
+
+    @Inject
+    public AuthenticationService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     public IntrospectReponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();

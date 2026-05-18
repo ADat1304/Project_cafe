@@ -125,7 +125,7 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     public void resetInventoryDaily() {
         resetAllInventoryTo(100);
