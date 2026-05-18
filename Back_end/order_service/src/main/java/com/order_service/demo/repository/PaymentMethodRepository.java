@@ -1,10 +1,14 @@
 package com.order_service.demo.repository;
 
 import com.order_service.demo.entity.PaymentMethod;
-import org.springframework.data.jpa.repository.JpaRepository;
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
 
 import java.util.Optional;
 
-public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, String> {
-    Optional<PaymentMethod> findByPaymentMethodType(String paymentMethodType);
+@ApplicationScoped
+public class PaymentMethodRepository implements PanacheRepositoryBase<PaymentMethod, String> {
+    public Optional<PaymentMethod> findByPaymentMethodType(String paymentMethodType) {
+        return find("paymentMethodType", paymentMethodType).firstResultOptional();
+    }
 }

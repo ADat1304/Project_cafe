@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "jakarta")
 public interface OrderMapper {
 
     @Mapping(target = "orderId", source = "orderID")

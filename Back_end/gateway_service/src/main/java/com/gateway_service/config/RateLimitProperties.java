@@ -1,55 +1,38 @@
 package com.gateway_service.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
-import java.time.Duration;
-import java.util.ArrayList;
+import jakarta.enterprise.context.ApplicationScoped;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Collections;
 
-@ConfigurationProperties(prefix = "security.rate-limit")
+@ApplicationScoped
 public class RateLimitProperties {
+    @Inject
+    @ConfigProperty(name = "security.rate-limit.capacity", defaultValue = "100")
+    int capacity;
 
-    /** Maximum number of requests that can be held in the bucket. */
-    private int capacity = 100;
+    @Inject
+    @ConfigProperty(name = "security.rate-limit.refill-tokens", defaultValue = "50")
+    int refillTokens;
 
-    /** Number of tokens refilled every period. */
-    private int refillTokens = 50;
-
-    /** Period in seconds for refilling tokens. */
-    private Duration refillPeriod = Duration.ofSeconds(60);
-
-    /** Paths that should bypass rate limiting (e.g., health checks). */
-    private List<String> whitelist = new ArrayList<>();
+    @Inject
+    @ConfigProperty(name = "security.rate-limit.whitelist", defaultValue = "/actuator/health")
+    String whitelist;
 
     public int getCapacity() {
         return capacity;
-    }
-
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
     }
 
     public int getRefillTokens() {
         return refillTokens;
     }
 
-    public void setRefillTokens(int refillTokens) {
-        this.refillTokens = refillTokens;
-    }
-
-    public Duration getRefillPeriod() {
-        return refillPeriod;
-    }
-
-    public void setRefillPeriod(Duration refillPeriod) {
-        this.refillPeriod = refillPeriod;
+    public java.time.Duration getRefillPeriod() {
+        return java.time.Duration.ofSeconds(60);
     }
 
     public List<String> getWhitelist() {
-        return whitelist;
-    }
-
-    public void setWhitelist(List<String> whitelist) {
-        this.whitelist = whitelist;
+        return Collections.singletonList(whitelist);
     }
 }

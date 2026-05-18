@@ -1,20 +1,35 @@
 package com.gateway_service.dto.table;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.FieldDefaults;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TableStatusUpdateRequest {
 
     @NotNull
-    Integer status;
+    private Integer status;
+
+    public TableStatusUpdateRequest() {}
+
+    public TableStatusUpdateRequest(Integer status) {
+        this.status = status;
+    }
+
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+
+    public static TableStatusUpdateRequestBuilder builder() {
+        return new TableStatusUpdateRequestBuilder();
+    }
+
+    public static class TableStatusUpdateRequestBuilder {
+        private Integer status;
+
+        public TableStatusUpdateRequestBuilder status(Integer status) {
+            this.status = status;
+            return this;
+        }
+
+        public TableStatusUpdateRequest build() {
+            return new TableStatusUpdateRequest(status);
+        }
+    }
 }

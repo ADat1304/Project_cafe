@@ -1,18 +1,32 @@
 package com.gateway_service.dto.product;
 
-
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.experimental.FieldDefaults;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
 public class InventoryUpdateRequest {
-    Integer quantity;
+
+    private Integer quantity;
+
+    public InventoryUpdateRequest() {}
+
+    public InventoryUpdateRequest(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
+    public static InventoryUpdateRequestBuilder builder() {
+        return new InventoryUpdateRequestBuilder();
+    }
+
+    public static class InventoryUpdateRequestBuilder {
+        private Integer quantity;
+
+        public InventoryUpdateRequestBuilder quantity(Integer quantity) {
+            this.quantity = quantity;
+            return this;
+        }
+
+        public InventoryUpdateRequest build() {
+            return new InventoryUpdateRequest(quantity);
+        }
+    }
 }

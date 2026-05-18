@@ -13,19 +13,19 @@ import com.example.product_service.repository.CategoryRepository;
 import com.example.product_service.repository.ProductRepository;
 import com.example.product_service.scraper.HighlandsCoffeeScraper;
 import com.example.product_service.scraper.HighlandsProduct;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
+import io.quarkus.scheduler.Scheduled;
 
 import java.text.Normalizer;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service
+@ApplicationScoped
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ProductService {
@@ -35,6 +35,7 @@ public class ProductService {
     CategoryRepository categoryRepository;
     HighlandsCoffeeScraper highlandsCoffeeScraper;
 
+    @Transactional
     public ProductResponse createProduct(ProductCreationRequest request){
         if(productRepository.existsByProductName(request.getProductName()))
             throw new AppException(ErrorCode.PRODUCT_EXISTED);
@@ -51,12 +52,12 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Category not found: " + request.getCategoryName()));
 
         product.setCategory(category);
-        Product savedProduct = productRepository.save(product);
-        return productMapper.toProductResponse(savedProduct);
+        productRepository.persist(product);
+        return productMapper.toProductResponse(product);
     }
 
     public List<ProductResponse> getAllProducts() {
-        return productRepository.findAll()
+        return productRepository.listAll()
                 .stream()
                 .map(productMapper::toProductResponse)
                 .collect(Collectors.toList());
@@ -68,8 +69,9 @@ public class ProductService {
         return productMapper.toProductResponse(product);
     }
 
+    @Transactional
     public ProductResponse decrementInventory(String productId, InventoryUpdateRequest request) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdOptional(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
         if (product.getAmount() < request.getQuantity()) {
@@ -77,15 +79,18 @@ public class ProductService {
         }
 
         product.setAmount(product.getAmount() - request.getQuantity());
-        return productMapper.toProductResponse(productRepository.save(product));
+        productRepository.persist(product);
+        return productMapper.toProductResponse(product);
     }
 
+    @Transactional
     public ProductResponse incrementInventory(String productId, InventoryUpdateRequest request) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdOptional(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
         product.setAmount(product.getAmount() + request.getQuantity());
-        return productMapper.toProductResponse(productRepository.save(product));
+        productRepository.persist(product);
+        return productMapper.toProductResponse(product);
     }
 
     public List<ProductResponse> getProductsByCategory(String categoryName) {
@@ -100,37 +105,41 @@ public class ProductService {
     }
 
     public List<String> getAllCategoryNames() {
-        return categoryRepository.findAll().stream()
+        return categoryRepository.listAll().stream()
                 .map(Category::getCategoryName)
                 .distinct()
                 .collect(Collectors.toList());
     }
+
     @Transactional
     public List<ProductResponse> resetAllInventoryTo(int quantity) {
         if (quantity < 0) {
             throw new AppException(ErrorCode.INVALID_KEY);
         }
 
-        List<Product> products = productRepository.findAll();
+        List<Product> products = productRepository.listAll();
         products.forEach(product -> product.setAmount(quantity));
-        return productRepository.saveAll(products)
-                .stream()
+        productRepository.persist(products);
+        return products.stream()
                 .map(productMapper::toProductResponse)
                 .collect(Collectors.toList());
     }
 
     @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
     public void resetInventoryDaily() {
         resetAllInventoryTo(100);
     }
+
     // ================== IMPORT HIGHLANDS ==================
 
+    @Transactional
     public List<ProductResponse> importHighlandsCoffeeMenu() {
         List<HighlandsProduct> scrapedProducts;
         try {
             scrapedProducts = highlandsCoffeeScraper.scrapeMenu();
         } catch (Exception ex) {
-            return List.of(); // hoặc throw AppExcep
+            return List.of();
         }
 
         Map<String, Category> categoryCache = new HashMap<>();
@@ -140,17 +149,18 @@ public class ProductService {
             if (shouldSkipHighlandsProduct(scrapedProduct)) {
                 continue;
             }
-            // chuẩn hoá category về Cà Phê / Trà / Freeze / Khác
             String categoryName = normalizeCategoryName(
-                    scrapedProduct.categoryName(),  // raw category từ Highlands
-                    scrapedProduct.productName()    // tên sản phẩm
+                    scrapedProduct.categoryName(),
+                    scrapedProduct.productName()
             );
 
             Category category = categoryCache.computeIfAbsent(categoryName, name ->
                     categoryRepository.findByCategoryName(name)
-                            .orElseGet(() -> categoryRepository.save(
-                                    Category.builder().categoryName(name).build()
-                            )));
+                            .orElseGet(() -> {
+                                Category newCat = Category.builder().categoryName(name).build();
+                                categoryRepository.persist(newCat);
+                                return newCat;
+                            }));
 
             if (productRepository.existsByProductName(scrapedProduct.productName())) {
                 continue;
@@ -172,104 +182,53 @@ public class ProductService {
                 ));
             }
 
-            responses.add(productMapper.toProductResponse(productRepository.save(product)));
+            productRepository.persist(product);
+            responses.add(productMapper.toProductResponse(product));
         }
 
         return responses;
     }
 
-
-    // BỎ QUA một số sản phẩm Highlands không muốn import
     private boolean shouldSkipHighlandsProduct(HighlandsProduct p) {
-        // Dùng normalizeText để bỏ dấu + viết hoa
         String name = normalizeText(p.productName());
-
-        // Bỏ sản phẩm tên "CÀ PHÊ"
         if (name.equals("CA PHE")) {
             return true;
         }
-
-        // nếu muốn bỏ luôn các sản phẩm giá 0 thì mở comment thêm:
-        // if (p.price() == null || BigDecimal.ZERO.compareTo(p.price()) == 0) {
-        //     return true;
-        // }
-
         return false;
     }
-    // =============== PHÂN LOẠI CATEGORY ===============
+
     private String normalizeCategoryName(String rawCategory, String productName) {
-        // Chuẩn hoá tên sản phẩm (bỏ dấu, viết hoa)
         String normalizedProductName = normalizeText(productName);
 
-        // 0) ƯU TIÊN: các sản phẩm BÁNH / ĐỒ ĂN -> Khác
         if (containsAny(normalizedProductName, List.of(
-                "BANH ",       // "BÁNH " (Bánh Mì, Bánh Ngọt,...)
-                " BANH",       // phòng trường hợp có khoảng trắng phía trước
-                "BANH MI",     // Bánh Mì
-                "BANH M",      // Bánh Mì (phòng lỗi dấu)
-                "MI QUE",      // Bánh Mì Que
-                "BREAD",
-                "CAKE",
-                "CAKES",
-                "CHEESE CAKE",
-                "CHEESECAKE",
-                "SANDWICH",
-                "BURGER",
-                "PASTRY",
-                "COOKIE",
-                "CROISSANT",
-                "MUFFIN"
+                "BANH ", " BANH", "BANH MI", "BANH M", "MI QUE", "BREAD",
+                "CAKE", "CAKES", "CHEESE CAKE", "CHEESECAKE", "SANDWICH",
+                "BURGER", "PASTRY", "COOKIE", "CROISSANT", "MUFFIN"
         ))) {
             return "Khác";
         }
 
-        // 1) Freeze
         if (containsAny(normalizedProductName, List.of(
-                "FREEZE",
-                "DA XAY",
-                "COOKIES & CREAM",
-                "Cookies & Cream"
+                "FREEZE", "DA XAY", "COOKIES & CREAM", "Cookies & Cream"
         ))) {
             return "Freeze";
         }
 
-        // 2) Trà
         if (containsAny(normalizedProductName, List.of(
-                "TRA ",
-                "TRA(",
-                "TRA_",
-                "TRA-",
-                " TRA",
-                "TEA",
-                "OOLONG",
-                "MATCHA",
-                "SEN VANG",
-                "CHANH",
-                "TAC"
+                "TRA ", "TRA(", "TRA_", "TRA-", " TRA", "TEA", "OOLONG",
+                "MATCHA", "SEN VANG", "CHANH", "TAC"
         ))) {
             return "Trà";
         }
 
-        // 3) Cà Phê
         if (containsAny(normalizedProductName, List.of(
-                "CA PHE",
-                "COFFEE",
-                "LATTE",
-                "ESPRESSO",
-                "AMERICANO",
-                "CAPPUCCINO",
-                "MACCHIATO",
-                "MOCHA",
-                "PHINDI",
-                "COLD BREW",
-                "BAC XIU",
-                "PHIN"
+                "CA PHE", "COFFEE", "LATTE", "ESPRESSO", "AMERICANO",
+                "CAPPUCCINO", "MACCHIATO", "MOCHA", "PHINDI", "COLD BREW",
+                "BAC XIU", "PHIN"
         ))) {
             return "Cà Phê";
         }
 
-
-        // 4) Fallback theo category gốc của Highlands nếu tên không đoán được
         String normalizedCategory = normalizeText(rawCategory);
         if (!normalizedCategory.isBlank()) {
             if (normalizedCategory.contains("FREEZE")) {
@@ -283,10 +242,8 @@ public class ProductService {
             }
         }
 
-        // 5) Còn lại cho vào Khác
         return "Khác";
     }
-
 
     private boolean containsAny(String text, List<String> keywords) {
         for (String k : keywords) {
@@ -306,10 +263,9 @@ public class ProductService {
         return cleaned.toUpperCase(Locale.ROOT);
     }
 
-    // =============== UPDATE / DELETE ===============
-
+    @Transactional
     public ProductResponse updateProduct(String productId, ProductCreationRequest request) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findByIdOptional(productId)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
         product.setProductName(request.getProductName());
@@ -328,13 +284,14 @@ public class ProductService {
             product.getImages().addAll(newImages);
         }
 
-        return productMapper.toProductResponse(productRepository.save(product));
+        productRepository.persist(product);
+        return productMapper.toProductResponse(product);
     }
 
+    @Transactional
     public void deleteProduct(String productId) {
-        if (!productRepository.existsById(productId)) {
-            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
-        }
-        productRepository.deleteById(productId);
+        Product product = productRepository.findByIdOptional(productId)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        productRepository.delete(product);
     }
 }

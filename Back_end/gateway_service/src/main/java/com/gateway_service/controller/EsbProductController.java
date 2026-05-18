@@ -1,102 +1,130 @@
 package com.gateway_service.controller;
 
-
 import com.gateway_service.client.ProductClient;
 import com.gateway_service.dto.product.InventoryUpdateRequest;
 import com.gateway_service.dto.product.ProductCreationRequest;
 import com.gateway_service.dto.product.ProductResponse;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.PermitAll;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/esb/products")
+@Path("/esb/products")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
 public class EsbProductController {
 
     private final ProductClient productClient;
-    @PostMapping
-    public ResponseEntity<ProductResponse> createProduct(
-            @RequestBody ProductCreationRequest request,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+
+    @POST
+    @RolesAllowed("ADMIN")
+    public ProductResponse createProduct(
+            ProductCreationRequest request,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(productClient.createProduct(request, token));
-    }
-    @GetMapping
-    public ResponseEntity<List<ProductResponse>> listProducts() {
-        return ResponseEntity.ok(productClient.getAllProducts());
-    }
-    @GetMapping("/category/{categoryName}")
-    public ResponseEntity<List<ProductResponse>> getByCategory(@PathVariable String categoryName) {
-        return ResponseEntity.ok(productClient.getProductsByCategory(categoryName));
+        return productClient.createProduct(request, token);
     }
 
-    @GetMapping("/name/{name}")
-    public ResponseEntity<ProductResponse> getByName(@PathVariable String name) {
-        return ResponseEntity.ok(productClient.getProductByName(name));
+    @GET
+    @PermitAll
+    public List<ProductResponse> listProducts() {
+        return productClient.getAllProducts();
     }
 
-    @PostMapping("/{productId}/inventory/decrease")
-    public ResponseEntity<ProductResponse> decrementInventory(
-            @PathVariable String productId,
-            @RequestBody InventoryUpdateRequest request,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @GET
+    @Path("/category/{categoryName}")
+    @PermitAll
+    public List<ProductResponse> getByCategory(@PathParam("categoryName") String categoryName) {
+        return productClient.getProductsByCategory(categoryName);
+    }
+
+    @GET
+    @Path("/name/{name}")
+    @PermitAll
+    public ProductResponse getByName(@PathParam("name") String name) {
+        return productClient.getProductByName(name);
+    }
+
+    @POST
+    @Path("/{productId}/inventory/decrease")
+    @PermitAll
+    public ProductResponse decrementInventory(
+            @PathParam("productId") String productId,
+            InventoryUpdateRequest request,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(productClient.decrementInventory(productId, request, token));
+        return productClient.decrementInventory(productId, request, token);
     }
 
-    @PostMapping("/{productId}/inventory/increase")
-    public ResponseEntity<ProductResponse> incrementInventory(
-            @PathVariable String productId,
-            @RequestBody InventoryUpdateRequest request,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @POST
+    @Path("/{productId}/inventory/increase")
+    @PermitAll
+    public ProductResponse incrementInventory(
+            @PathParam("productId") String productId,
+            InventoryUpdateRequest request,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(productClient.incrementInventory(productId, request, token));
+        return productClient.incrementInventory(productId, request, token);
     }
-    @PostMapping("/inventory/reset")
-    public ResponseEntity<List<ProductResponse>> resetAllInventory(
-            @RequestBody(required = false) InventoryUpdateRequest request,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+
+    @POST
+    @Path("/inventory/reset")
+    @RolesAllowed("ADMIN")
+    public List<ProductResponse> resetAllInventory(
+            InventoryUpdateRequest request,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
         Integer quantity = request != null ? request.getQuantity() : null;
-        return ResponseEntity.ok(productClient.resetAllInventory(quantity, token));
-    }
-    @GetMapping("/categories")
-    public ResponseEntity<List<String>> getAllCategories() {
-        return ResponseEntity.ok(productClient.getAllCategories());
-    }
-    // [THÊM MỚI] Endpoint Sửa
-    @PutMapping("/{productId}")
-    public ResponseEntity<ProductResponse> updateProduct(
-            @PathVariable String productId,
-            @RequestBody ProductCreationRequest request,
-            @RequestHeader(name = "Authorization", required = false) String authorization
-    ) {
-        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(productClient.updateProduct(productId, request, token));
+        return productClient.resetAllInventory(quantity, token);
     }
 
-    // [THÊM MỚI] Endpoint Xóa
-    @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> deleteProduct(
-            @PathVariable String productId,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @GET
+    @Path("/categories")
+    @PermitAll
+    public List<String> getAllCategories() {
+        return productClient.getAllCategories();
+    }
+
+    @PUT
+    @Path("/{productId}")
+    @RolesAllowed("ADMIN")
+    public ProductResponse updateProduct(
+            @PathParam("productId") String productId,
+            ProductCreationRequest request,
+            @HeaderParam("Authorization") String authorization
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return productClient.updateProduct(productId, request, token);
+    }
+
+    @DELETE
+    @Path("/{productId}")
+    @RolesAllowed("ADMIN")
+    public Response deleteProduct(
+            @PathParam("productId") String productId,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
         productClient.deleteProduct(productId, token);
-        return ResponseEntity.noContent().build();
+        return Response.noContent().build();
     }
-    @PostMapping("/import/highlands")
-    public ResponseEntity<List<ProductResponse>> importHighlands(
-            @RequestHeader(name = "Authorization", required = false) String authorization
+
+    @POST
+    @Path("/import/highlands")
+    @RolesAllowed("ADMIN")
+    public List<ProductResponse> importHighlands(
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(productClient.importHighlands(token));
+        return productClient.importHighlands(token);
     }
 }

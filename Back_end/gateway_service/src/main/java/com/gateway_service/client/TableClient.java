@@ -1,65 +1,40 @@
 package com.gateway_service.client;
 
-
 import com.gateway_service.common.ApiResponse;
-import com.gateway_service.config.ServiceEndpointsProperties;
 import com.gateway_service.dto.table.CafeTableResponse;
 import com.gateway_service.dto.table.TableStatusUpdateRequest;
-import lombok.RequiredArgsConstructor;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import org.eclipse.microprofile.rest.client.inject.RestClient;
 import java.util.List;
 
-@Component
-@RequiredArgsConstructor
+@ApplicationScoped
 public class TableClient {
 
-    private final RestTemplate restTemplate;
-    private final ServiceEndpointsProperties endpointsProperties;
+    @Inject
+    @RestClient
+    TableRestClient tableRestClient;
 
     public List<CafeTableResponse> getAllTables(String token) {
-        HttpHeaders headers = new HttpHeaders();
-        if (token != null && !token.isBlank()) {
-            headers.setBearerAuth(token);
-        }
-
-        ResponseEntity<ApiResponse<List<CafeTableResponse>>> response = restTemplate.exchange(
-                endpointsProperties.getOrder() + "/tables",
-                HttpMethod.GET,
-                new HttpEntity<>(headers),
-                new ParameterizedTypeReference<>() {
-                }
-        );
-
-        return response.getBody() != null ? response.getBody().getResult() : List.of();
+        ApiResponse<List<CafeTableResponse>> response = tableRestClient.getAllTables(formatToken(token));
+        return response != null ? response.getResult() : List.of();
     }
 
     public CafeTableResponse updateTableStatus(String tableNumber, Integer status, String token) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        if (token != null && !token.isBlank()) {
-            headers.setBearerAuth(token);
-        }
-
         TableStatusUpdateRequest request = TableStatusUpdateRequest.builder()
                 .status(status)
                 .build();
+        ApiResponse<CafeTableResponse> response = tableRestClient.updateTableStatus(tableNumber, request, formatToken(token));
+        return response != null ? response.getResult() : null;
+    }
 
-        ResponseEntity<ApiResponse<CafeTableResponse>> response = restTemplate.exchange(
-                endpointsProperties.getOrder() + "/tables/" + tableNumber + "/status",
-                HttpMethod.PATCH,
-                new HttpEntity<>(request, headers),
-                new ParameterizedTypeReference<>() {
-                }
-        );
-
-        return response.getBody() != null ? response.getBody().getResult() : null;
+    private String formatToken(String token) {
+        if (token != null && !token.isBlank()) {
+            if (token.startsWith("Bearer ") || token.startsWith("bearer ")) {
+                return token;
+            }
+            return "Bearer " + token;
+        }
+        return null;
     }
 }

@@ -1,6 +1,5 @@
 package com.gateway_service.service;
 
-
 import com.gateway_service.client.AuthClient;
 import com.gateway_service.client.OrderClient;
 import com.gateway_service.client.ProductClient;
@@ -12,14 +11,14 @@ import com.gateway_service.dto.order.OrderResponse;
 import com.gateway_service.dto.product.ProductResponse;
 import com.nimbusds.jwt.SignedJWT;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.stereotype.Service;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.ForbiddenException;
 
 import java.text.ParseException;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
+@ApplicationScoped
 @RequiredArgsConstructor
 public class OrderOrchestrationService {
 
@@ -30,7 +29,7 @@ public class OrderOrchestrationService {
     public OrchestratedOrderResponse orchestrateOrder(String token, OrderCreationRequest request) {
         IntrospectResponse introspectResponse = authClient.introspect(token);
         if (introspectResponse == null || !introspectResponse.isValid()) {
-            throw new AccessDeniedException("Token is invalid or expired");
+            throw new ForbiddenException("Token is invalid or expired");
         }
 
         List<ProductSummary> products = request.getItems()

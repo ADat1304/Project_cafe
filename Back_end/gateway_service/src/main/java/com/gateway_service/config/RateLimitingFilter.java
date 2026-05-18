@@ -2,77 +2,64 @@ package com.gateway_service.config;
 
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
-
 import io.github.bucket4j.Refill;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
+import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.container.ContainerRequestFilter;
+import jakarta.ws.rs.ext.Provider;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
+import jakarta.inject.Inject;
+import jakarta.annotation.Priority;
+import jakarta.ws.rs.Priorities;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Component
-public class RateLimitingFilter extends OncePerRequestFilter {
+@Provider
+@Priority(Priorities.USER)
+public class RateLimitingFilter implements ContainerRequestFilter {
 
-    private final RateLimitProperties properties;
+    @Inject
+    RateLimitProperties properties;
+
     private final Map<String, Bucket> ipBuckets = new ConcurrentHashMap<>();
-    private final AntPathMatcher pathMatcher = new AntPathMatcher();
-
-    public RateLimitingFilter(RateLimitProperties properties) {
-        this.properties = properties;
-    }
 
     @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return properties.getWhitelist().stream()
-                .anyMatch(pattern -> pathMatcher.match(pattern, path));
-    }
+    public void filter(ContainerRequestContext requestContext) {
+        UriInfo uriInfo = requestContext.getUriInfo();
+        String path = uriInfo.getPath();
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-        String clientIp = extractClientIp(request);
-        Bucket bucket = ipBuckets.computeIfAbsent(clientIp, this::newBucket);
-
-        if (bucket.tryConsume(1)) {
-            filterChain.doFilter(request, response);
+        if (properties.getWhitelist().stream().anyMatch(pattern -> path.contains(pattern))) {
             return;
         }
 
-        response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
-        response.setContentType("application/json");
-        response.getWriter().write("{\"message\":\"Too many requests - please slow down.\"}");
+        String clientIp = extractClientIp(requestContext);
+        Bucket bucket = ipBuckets.computeIfAbsent(clientIp, this::newBucket);
+
+        if (!bucket.tryConsume(1)) {
+            requestContext.abortWith(
+                Response.status(429) // TOO_MANY_REQUESTS
+                    .type("application/json")
+                    .entity("{\"message\":\"Too many requests - please slow down.\"}")
+                    .build()
+            );
+        }
     }
 
     private Bucket newBucket(String ignoredKey) {
         return Bucket.builder()
                 .addLimit(Bandwidth.classic(
                         properties.getCapacity(),
-                        Refill.intervally(properties.getRefillTokens(), normalizeRefillPeriod(properties.getRefillPeriod()))
+                        Refill.intervally(properties.getRefillTokens(), Duration.ofSeconds(60))
                 ))
                 .build();
     }
 
-    private Duration normalizeRefillPeriod(Duration period) {
-        if (period == null || period.isZero() || period.isNegative()) {
-            return Duration.ofSeconds(60);
+    private String extractClientIp(ContainerRequestContext requestContext) {
+        String xff = requestContext.getHeaderString("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) {
+            return xff.split(",")[0].trim();
         }
-        return period;
-    }
-
-    private String extractClientIp(HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader("X-Forwarded-For"))
-                .map(header -> header.split(",")[0].trim())
-                .filter(ip -> !ip.isBlank())
-                .orElseGet(request::getRemoteAddr);
+        return "unknown-ip";
     }
 }

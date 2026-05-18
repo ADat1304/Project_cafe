@@ -5,106 +5,113 @@ import com.gateway_service.dto.esb.OrchestratedOrderResponse;
 import com.gateway_service.dto.order.*;
 import com.gateway_service.service.OrderOrchestrationService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import io.quarkus.security.Authenticated;
+import jakarta.annotation.security.PermitAll;
 
 import java.math.BigDecimal;
 import java.util.List;
 
-@RestController
-@RequestMapping("/esb/orders")
+@Path("/esb/orders")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
+@Authenticated
 public class EsbOrderController {
 
     private final OrderOrchestrationService orchestrationService;
     private final OrderClient orderClient;
 
-    @PostMapping
-    public ResponseEntity<OrchestratedOrderResponse> createOrder(
-            @RequestHeader(name = "Authorization") String authorization,
-            @RequestBody OrderCreationRequest request
-    ) {
-        String token = authorization.replace("Bearer ", "");
-        OrchestratedOrderResponse response = orchestrationService.orchestrateOrder(token, request);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping
-    public ResponseEntity<List<OrderResponse>> listOrders(
-            @RequestHeader(name = "Authorization") String authorization
-    ) {
-        String token = authorization.replace("Bearer ", "");
-        return ResponseEntity.ok(orderClient.getAllOrders(token));
-    }
-    @PatchMapping("/{orderId}/status")
-    public ResponseEntity<OrderResponse> updateStatus(
-            @PathVariable String orderId,
-            @RequestHeader(name = "Authorization") String authorization,
-            @RequestBody OrderStatusUpdateRequest request
-    ) {
-        String token = authorization.replace("Bearer ", "");
-        return ResponseEntity.ok(orderClient.updateStatus(orderId, request, token));
-    }
-    @GetMapping("/daily-stats")
-    public ResponseEntity<DailyOrderStatsResponse> getDailyStats(
-            @RequestHeader(name = "Authorization") String authorization,
-            @RequestParam(value = "date", required = false) String date
-    ) {
-        String token = authorization.replace("Bearer ", "");
-        return ResponseEntity.ok(orderClient.getDailyStats(date, token));
-    }
-    @GetMapping("/payment-methods")
-    public ResponseEntity<List<Object>> getPaymentMethods(
-            @RequestHeader(name = "Authorization") String authorization
-    ) {
-        String token = authorization.replace("Bearer ", "");
-        return ResponseEntity.ok(orderClient.getPaymentMethods(token));
-    }
-    @GetMapping("/top-selling")
-    public ResponseEntity<List<TopProductResponse>> getTopSelling(
-            @RequestHeader(name = "Authorization", required = false) String authorization,
-            @RequestParam(defaultValue = "5") int limit
+    @POST
+    public OrchestratedOrderResponse createOrder(
+            @HeaderParam("Authorization") String authorization,
+            OrderCreationRequest request
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(orderClient.getTopSelling(limit, token));
+        return orchestrationService.orchestrateOrder(token, request);
     }
 
-    @GetMapping("/revenue")
-    public ResponseEntity<BigDecimal> getRevenue(
-            @RequestHeader(name = "Authorization", required = false) String authorization,
-            @RequestParam String startDate,
-            @RequestParam String endDate
+    @GET
+    public List<OrderResponse> listOrders(
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(orderClient.getRevenue(startDate, endDate, token));
+        return orderClient.getAllOrders(token);
     }
-    @PostMapping("/{orderId}/items")
-    public ResponseEntity<OrderResponse> addItem(
-            @PathVariable String orderId,
-            @RequestHeader(name = "Authorization") String authorization,
-            @RequestBody OrderItemRequest request
+
+    @PATCH
+    @Path("/{orderId}/status")
+    public OrderResponse updateStatus(
+            @PathParam("orderId") String orderId,
+            @HeaderParam("Authorization") String authorization,
+            OrderStatusUpdateRequest request
     ) {
-        String token = authorization.replace("Bearer ", "");
-        return ResponseEntity.ok(orderClient.addItem(orderId, request, token));
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return orderClient.updateStatus(orderId, request, token);
     }
 
-    @PostMapping("/{orderId}/items/decrease")
-    public ResponseEntity<OrderResponse> decreaseItem(
-            @PathVariable String orderId,
-            @RequestHeader(name = "Authorization") String authorization,
-            @RequestBody OrderItemRequest request
+    @GET
+    @Path("/daily-stats")
+    public DailyOrderStatsResponse getDailyStats(
+            @HeaderParam("Authorization") String authorization,
+            @QueryParam("date") String date
     ) {
-        String token = authorization.replace("Bearer ", "");
-        return ResponseEntity.ok(orderClient.decreaseItem(orderId, request, token));
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return orderClient.getDailyStats(date, token);
     }
 
-    @RequestMapping(value = "/{orderId}/items", method = RequestMethod.OPTIONS)
-    public ResponseEntity<Void> handleItemsPreflight() {
-        return ResponseEntity.ok().build();
+    @GET
+    @Path("/payment-methods")
+    public List<Object> getPaymentMethods(
+            @HeaderParam("Authorization") String authorization
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return orderClient.getPaymentMethods(token);
     }
 
-    @RequestMapping(value = "/{orderId}/items/decrease", method = RequestMethod.OPTIONS)
-    public ResponseEntity<Void> handleItemsDecreasePreflight() {
-        return ResponseEntity.ok().build();
+    @GET
+    @Path("/top-selling")
+    @PermitAll
+    public List<TopProductResponse> getTopSelling(
+            @HeaderParam("Authorization") String authorization,
+            @QueryParam("limit") @DefaultValue("5") int limit
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return orderClient.getTopSelling(limit, token);
+    }
+
+    @GET
+    @Path("/revenue")
+    @PermitAll
+    public BigDecimal getRevenue(
+            @HeaderParam("Authorization") String authorization,
+            @QueryParam("startDate") String startDate,
+            @QueryParam("endDate") String endDate
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return orderClient.getRevenue(startDate, endDate, token);
+    }
+
+    @POST
+    @Path("/{orderId}/items")
+    public OrderResponse addItem(
+            @PathParam("orderId") String orderId,
+            @HeaderParam("Authorization") String authorization,
+            OrderItemRequest request
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return orderClient.addItem(orderId, request, token);
+    }
+
+    @POST
+    @Path("/{orderId}/items/decrease")
+    public OrderResponse decreaseItem(
+            @PathParam("orderId") String orderId,
+            @HeaderParam("Authorization") String authorization,
+            OrderItemRequest request
+    ) {
+        String token = authorization != null ? authorization.replace("Bearer ", "") : null;
+        return orderClient.decreaseItem(orderId, request, token);
     }
 }

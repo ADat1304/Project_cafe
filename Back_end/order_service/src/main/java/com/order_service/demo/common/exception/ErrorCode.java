@@ -3,6 +3,7 @@ package com.order_service.demo.common.exception;
 public enum ErrorCode {
 
     PRODUCT_NOT_FOUND(1007, "product not found"),
+    INVALID_KEY(1002, "invalid key"),
     PRODUCT_OUT_OF_STOCK(1008, "product does not have enough quantity"),
     PRODUCT_SERVICE_UNAVAILABLE(1009, "product service is not available"),
     TABLE_NOT_FOUND(1010, "table not found"),

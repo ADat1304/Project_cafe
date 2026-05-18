@@ -5,69 +5,73 @@ import com.gateway_service.dto.user.UserCreationRequest;
 import com.gateway_service.dto.user.UserResponse;
 import com.gateway_service.dto.user.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.annotation.security.RolesAllowed;
+import jakarta.annotation.security.PermitAll;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/esb/users")
+@Path("/esb/users")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
 public class EsbUserController {
 
     private final UserClient userClient;
 
-    @PostMapping
-    public ResponseEntity<UserResponse> createUser(
-            @RequestBody UserCreationRequest request,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @POST
+    @PermitAll
+    public UserResponse createUser(
+            UserCreationRequest request,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(userClient.createUser(request, token));
+        return userClient.createUser(request, token);
     }
 
-    @GetMapping
-    public ResponseEntity<List<UserResponse>> listUsers(
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @GET
+    @RolesAllowed("ADMIN")
+    public List<UserResponse> listUsers(
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(userClient.getUsers(token));
+        return userClient.getUsers(token);
     }
 
-    @GetMapping("/{userId}")
-    public ResponseEntity<UserResponse> getUserById(
-            @PathVariable String userId,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @GET
+    @Path("/{userId}")
+    @RolesAllowed("ADMIN")
+    public UserResponse getUserById(
+            @PathParam("userId") String userId,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(userClient.getUserById(userId, token));
+        return userClient.getUserById(userId, token);
     }
 
-    @PutMapping("/{userId}")
-    public ResponseEntity<UserResponse> updateUser(
-            @PathVariable String userId,
-            @RequestBody UserUpdateRequest request,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @PUT
+    @Path("/{userId}")
+    @RolesAllowed("ADMIN")
+    public UserResponse updateUser(
+            @PathParam("userId") String userId,
+            UserUpdateRequest request,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
-        return ResponseEntity.ok(userClient.updateUser(userId, request, token));
+        return userClient.updateUser(userId, request, token);
     }
 
-    @DeleteMapping("/{userId}")
-    public ResponseEntity<Void> deleteUser(
-            @PathVariable String userId,
-            @RequestHeader(name = "Authorization", required = false) String authorization
+    @DELETE
+    @Path("/{userId}")
+    @RolesAllowed("ADMIN")
+    public Response deleteUser(
+            @PathParam("userId") String userId,
+            @HeaderParam("Authorization") String authorization
     ) {
         String token = authorization != null ? authorization.replace("Bearer ", "") : null;
         userClient.deleteUser(userId, token);
-        return ResponseEntity.noContent().build();
+        return Response.noContent().build();
     }
 }

@@ -18,12 +18,12 @@ import com.order_service.demo.mapper.OrderMapper;
 import com.order_service.demo.repository.CafeTableRepository;
 import com.order_service.demo.repository.OrderRepository;
 import com.order_service.demo.repository.PaymentMethodRepository;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service
+@ApplicationScoped
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class OrderService {
@@ -57,7 +57,8 @@ public class OrderService {
             CafeTable table = cafeTableRepository.findByTableNumber(request.getTableNumber())
                     .orElseThrow(() -> new AppException(ErrorCode.TABLE_NOT_FOUND));
             order.setTable(table);
-            table.setStatus(1); // Cập nhật bàn thành Bận
+            table.setStatus(1);
+            cafeTableRepository.persist(table);
         }
 
         if (request.getPaymentMethodType() != null) {
@@ -70,11 +71,7 @@ public class OrderService {
         BigDecimal totalAmount = BigDecimal.ZERO;
 
         for (OrderItemRequest item : request.getItems()) {
-            // 1. Lấy thông tin sản phẩm
             ProductSummary product = productClient.fetchProductByName(item.getProductName());
-
-            // 2. [FIX QUAN TRỌNG] Gọi hàm giảm tồn kho
-            // Nếu hết hàng, ProductClient mới (ở trên) sẽ ném ra PRODUCT_OUT_OF_STOCK
             productClient.decreaseInventory(product.getProductID(), item.getQuantity());
 
             OrderDetail detail = OrderDetail.builder()
@@ -94,12 +91,13 @@ public class OrderService {
         order.setOrderDetails(details);
         order.setTotalAmount(totalAmount);
 
-        Orders savedOrder = orderRepository.save(order);
-        return orderMapper.toOrderResponse(savedOrder);
+        orderRepository.persist(order);
+        return orderMapper.toOrderResponse(order);
     }
+
     @Transactional
     public OrderResponse updateStatus(String orderId, OrderStatusUpdateRequest request) {
-        Orders order = orderRepository.findById(orderId)
+        Orders order = orderRepository.findByIdOptional(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         String normalizedStatus = request.getStatus() == null ? null : request.getStatus().trim().toUpperCase();
@@ -117,24 +115,26 @@ public class OrderService {
             } else if ("OPEN".equals(normalizedStatus)) {
                 table.setStatus(1);
             }
-            cafeTableRepository.save(table);
+            cafeTableRepository.persist(table);
         }
 
-        Orders updatedOrder = orderRepository.save(order);
-        return orderMapper.toOrderResponse(updatedOrder);
+        orderRepository.persist(order);
+        return orderMapper.toOrderResponse(order);
     }
+
     public List<OrderResponse> getAllOrders() {
-        return orderRepository.findAll().stream()
+        return orderRepository.listAll().stream()
                 .map(orderMapper::toOrderResponse)
                 .collect(Collectors.toList());
     }
+
     public DailyOrderStatsResponse getDailyStats(LocalDate date) {
         LocalDate targetDate = date != null ? date : LocalDate.now();
         LocalDateTime startOfDay = targetDate.atStartOfDay();
         LocalDateTime startOfNextDay = targetDate.plusDays(1).atStartOfDay();
 
-        BigDecimal totalAmount = orderRepository.sumTotalAmountByOrderDateBetweenAndStatus(startOfDay,startOfNextDay,"CLOSE");
-        long orderCount = orderRepository.countByOrderDateBetweenAndStatus(startOfDay, startOfNextDay,"CLOSE");
+        BigDecimal totalAmount = orderRepository.sumTotalAmountByOrderDateBetweenAndStatus(startOfDay, startOfNextDay, "CLOSE");
+        long orderCount = orderRepository.countByOrderDateBetweenAndStatus(startOfDay, startOfNextDay, "CLOSE");
 
         return DailyOrderStatsResponse.builder()
                 .date(targetDate)
@@ -142,22 +142,24 @@ public class OrderService {
                 .orderCount(orderCount)
                 .build();
     }
+
     public List<PaymentMethod> getAllPaymentMethods() {
-        return paymentMethodRepository.findAll();
-    }
-    public List<TopProductResponse> getTopSellingProducts(int limit) {
-        return orderRepository.findTopSellingProducts(PageRequest.of(0, limit));
+        return paymentMethodRepository.listAll();
     }
 
-    // Bổ sung hàm lấy doanh thu theo khoảng thời gian (Optional)
-    public BigDecimal getRevenueBetween(LocalDate startDate, LocalDate endDate,String status) {
+    public List<TopProductResponse> getTopSellingProducts(int limit) {
+        return orderRepository.findTopSellingProducts(limit);
+    }
+
+    public BigDecimal getRevenueBetween(LocalDate startDate, LocalDate endDate, String status) {
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.plusDays(1).atStartOfDay();
-        return orderRepository.sumTotalAmountByOrderDateBetweenAndStatus(start, end,status);
+        return orderRepository.sumTotalAmountByOrderDateBetweenAndStatus(start, end, status);
     }
+
     @Transactional
     public OrderResponse addItem(String orderId, OrderItemRequest request) {
-        Orders order = orderRepository.findById(orderId)
+        Orders order = orderRepository.findByIdOptional(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         if ("CLOSE".equalsIgnoreCase(order.getStatus())) {
@@ -188,13 +190,13 @@ public class OrderService {
 
         order.setTotalAmount(recalculateTotal(order));
 
-        Orders savedOrder = orderRepository.save(order);
-        return orderMapper.toOrderResponse(savedOrder);
+        orderRepository.persist(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Transactional
     public OrderResponse decreaseItemQuantity(String orderId, OrderItemRequest request) {
-        Orders order = orderRepository.findById(orderId)
+        Orders order = orderRepository.findByIdOptional(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         if ("CLOSE".equalsIgnoreCase(order.getStatus())) {
@@ -218,8 +220,8 @@ public class OrderService {
 
         order.setTotalAmount(recalculateTotal(order));
 
-        Orders savedOrder = orderRepository.save(order);
-        return orderMapper.toOrderResponse(savedOrder);
+        orderRepository.persist(order);
+        return orderMapper.toOrderResponse(order);
     }
 
     private BigDecimal recalculateTotal(Orders order) {

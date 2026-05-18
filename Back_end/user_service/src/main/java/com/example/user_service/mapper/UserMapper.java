@@ -8,7 +8,7 @@ import com.example.user_service.entity.Users;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "jakarta")
 public interface UserMapper {
     Users toUser(UserCreationRequest request);
 

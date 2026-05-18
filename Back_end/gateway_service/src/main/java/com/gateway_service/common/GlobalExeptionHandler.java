@@ -1,46 +1,61 @@
 package com.gateway_service.common;
 
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+import jakarta.ws.rs.ForbiddenException;
+import io.quarkus.security.UnauthorizedException;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.client.RestClientResponseException;
+@Provider
+public class GlobalExeptionHandler implements ExceptionMapper<Throwable> {
 
-@Slf4j
-@ControllerAdvice
-public class GlobalExeptionHandler {
+    private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(GlobalExeptionHandler.class.getName());
 
-    @ExceptionHandler(RestClientResponseException.class)
-    public ResponseEntity<ApiResponse<String>> handleRestClient(RestClientResponseException exception) {
-        log.error("Service call failed", exception);
-        ApiResponse<String> response = ApiResponse.<String>builder()
-                .code(exception.getRawStatusCode())
-                .message(exception.getStatusText())
-                .result(exception.getResponseBodyAsString())
-                .build();
-        return ResponseEntity.status(exception.getRawStatusCode()).body(response);
-    }
+    @Override
+    public Response toResponse(Throwable exception) {
+        if (exception instanceof WebApplicationException) {
+            WebApplicationException wae = (WebApplicationException) exception;
+            Response response = wae.getResponse();
+            String errorMsg = exception.getMessage();
+            try {
+                if (response.hasEntity()) {
+                    errorMsg = response.readEntity(String.class);
+                }
+            } catch (Exception e) {
+                // Ignore reading exception
+            }
+            log.severe("Service call failed: status=" + response.getStatus() + ", message=" + errorMsg);
+            
+            ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                    .code(response.getStatus())
+                    .message(wae.getMessage())
+                    .result(errorMsg)
+                    .build();
+            return Response.status(response.getStatus()).entity(apiResponse).build();
+        }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<String>> handleAccessDenied(AccessDeniedException exception) {
-        ApiResponse<String> response = ApiResponse.<String>builder()
-                .code(HttpStatus.FORBIDDEN.value())
+        if (exception instanceof ForbiddenException || exception instanceof io.quarkus.security.ForbiddenException) {
+            ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                    .code(Response.Status.FORBIDDEN.getStatusCode())
+                    .message(exception.getMessage())
+                    .build();
+            return Response.status(Response.Status.FORBIDDEN).entity(apiResponse).build();
+        }
+
+        if (exception instanceof UnauthorizedException) {
+            ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                    .code(Response.Status.UNAUTHORIZED.getStatusCode())
+                    .message(exception.getMessage())
+                    .build();
+            return Response.status(Response.Status.UNAUTHORIZED).entity(apiResponse).build();
+        }
+
+        log.severe("Unexpected error: " + exception.getMessage());
+        ApiResponse<String> apiResponse = ApiResponse.<String>builder()
+                .code(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode())
                 .message(exception.getMessage())
                 .build();
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<String>> handleUnexpected(Exception exception) {
-        log.error("Unexpected error", exception);
-        ApiResponse<String> response = ApiResponse.<String>builder()
-                .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
-                .message(exception.getMessage())
-                .build();
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(apiResponse).build();
     }
 }

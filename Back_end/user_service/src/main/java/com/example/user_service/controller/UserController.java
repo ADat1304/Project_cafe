@@ -1,66 +1,69 @@
 package com.example.user_service.controller;
 
-
 import com.example.user_service.common.ApiResponse;
 import com.example.user_service.dto.request.UserCreationRequest;
 import com.example.user_service.dto.request.UserUpdateRequest;
-
 import com.example.user_service.dto.response.UserResponse;
 import com.example.user_service.service.UserService;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.eclipse.microprofile.jwt.JsonWebToken;
+import jakarta.inject.Inject;
 
 import java.util.List;
 
 @Slf4j
-@RestController
-@RequestMapping("/users")
+@Path("/users")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
     UserService userService;
 
+    @Inject
+    JsonWebToken jwt;
 
-    @PostMapping
-    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request){
+    @POST
+    public ApiResponse<UserResponse> createUser(@Valid UserCreationRequest request){
         return ApiResponse.<UserResponse>builder()
                 .result(userService.createUser(request))
                 .build();
     }
 
-    @GetMapping
-    ApiResponse<List<UserResponse>> getUsers(){
-
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        log.info("user name: {}", authentication.getName());
-        authentication.getAuthorities().forEach(
-                grantedAuthority -> log.info(grantedAuthority.getAuthority()));
+    @GET
+    public ApiResponse<List<UserResponse>> getUsers(){
+        if (jwt != null && jwt.getName() != null) {
+            log.info("user name: {}", jwt.getName());
+            jwt.getGroups().forEach(role -> log.info(role));
+        }
 
         return ApiResponse.<List<UserResponse>>builder()
                 .result(userService.getUsers())
                 .build();
     }
 
-    @GetMapping("/{userId}")
-    UserResponse getUserId(@PathVariable("userId") String userId){
+    @GET
+    @Path("/{userId}")
+    public UserResponse getUserId(@PathParam("userId") String userId){
         return userService.getUserId(userId);
     }
 
-    @DeleteMapping("/{userId}")
-    String deleteUserId(@PathVariable("userId") String userId){
+    @DELETE
+    @Path("/{userId}")
+    public String deleteUserId(@PathParam("userId") String userId){
         userService.deleteUserId(userId);
         return "user has deleted";
     }
 
-    @PutMapping("/{userId}")
-    UserResponse updateUser(@PathVariable String userId,@RequestBody UserUpdateRequest request) {
-        return userService.updateUser(userId,request);
+    @PUT
+    @Path("/{userId}")
+    public UserResponse updateUser(@PathParam("userId") String userId, UserUpdateRequest request) {
+        return userService.updateUser(userId, request);
     }
 }

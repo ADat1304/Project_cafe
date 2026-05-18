@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "jakarta")
 public interface ProductMapper {
 
     @Mapping(target = "productID", ignore = true)
